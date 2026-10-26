@@ -1,0 +1,209 @@
+---
+title: "02 · eBird abundance"
+subtitle: "When does each species pass through the Pacific Flyway, and how much of its population uses it?"
+format:
+  html:
+    toc: true
+execute:
+  warning: false
+  message: false
+---
+
+## What this notebook produces
+
+For each selected species, a **weekly time series** of the share of that
+species' total population that sits inside our study area (the Pacific
+Flyway states). Plotted across the year, it shows migration through the
+region as a pulse: the share rises as birds arrive and drops as they move on.
+
+**Outputs** (both are *derived* products we're allowed to share):
+
+- `data/derived/weekly_population_share.csv`: the numbers
+- `figures/02_<season>_passage_curves.png`: the chart (season from config.R)
+
+## Key ideas 
+
+**Relative abundance is not a bird count.** eBird Status estimates the
+expected count on a *standardized checklist*, not the number of birds on the
+ground. So we can't say "2 million Wilson's Warblers are in California." What
+we *can* say robustly is what **share of a species' population** is in a
+place in a given week. That's what eBird's `proportion-population` product
+gives us, and it's why we use it here instead of raw abundance.
+
+**Never compare species' raw abundance values.** A value of 5 for one species
+and 2 for another doesn't mean the first is 2.5× more common. Within-species
+shares and timing are fine; cross-species magnitudes are not.
+
+**The dates are a "typical year."** eBird models pool many years of
+checklists. Layer dates such as `2023-09-20` mean "the week of Sep 20 in a
+typical year," not September 2023 specifically.
+
+```{r setup}
+source(here::here("R", "config.R"))
+
+library(ebirdst)
+library(terra)    # rasters
+library(sf)       # polygons
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(readr)
+library(ggplot2)
+
+selection <- read_csv(file.path(PATHS$derived, "species_selection.csv"),
+                      show_col_types = FALSE) |>
+  filter(selected)
+
+selection |> select(species_code, common_name, use)
+```
+
+## Step 1 · Build the study area
+
+We use the `maps` package's US state outlines because they ship with the
+package (no download, no extra key) and are accurate enough at 27 km.
+The building logic lives in `R/study_area.R` so notebooks 02 and 03 use
+identical boundaries; read that file for the geometry details.
+
+```{r study-area}
+source(here::here("R", "study_area.R"))
+
+states <- study_states()   # one polygon per state, CONUS Albers (EPSG:5070)
+
+# One merged polygon for the whole flyway study area, plus the focus state.
+study_area <- states |> summarise(name = "Pacific Flyway (study states)")
+focus_area <- states |> filter(state == FOCUS_STATE) |>
+  mutate(name = tools::toTitleCase(FOCUS_STATE)) |> select(name)
+
+areas <- bind_rows(study_area, focus_area)
+
+ggplot(states) + geom_sf() + labs(title = "Study area states") + theme_minimal()
+```
+
+## Step 2 · Download the eBird data (once per species)
+
+```{r download}
+# pattern = "_27km_" keeps only the 27 km files (see R/config.R for why).
+# Files go to ebirdst_data_dir(), which is OUTSIDE this repo, so raw eBird
+# rasters can never be committed to GitHub by accident.
+# Already-downloaded files are skipped, so re-running this is cheap.
+walk(selection$species_code, \(code) {
+  ebirdst_download_status(
+    code,
+    download_abundance = TRUE,   # includes proportion-population
+    pattern = paste0("_", EBIRD_RESOLUTION, "_")
+  )
+})
+```
+
+## Step 3 · Weekly share of each population inside the study area
+
+```{r weekly-share}
+#' Weekly share of a species' population inside each area.
+#'
+#' The proportion-population raster has 52 layers (one per week). In each
+#' layer, every cell holds the fraction of the species' TOTAL population in
+#' that cell, so the whole map sums to ~1. Summing the cells that fall
+#' inside a polygon gives the fraction of the population inside it.
+weekly_share <- function(code) {
+  prop <- load_raster(code,
+                      product = "proportion-population",
+                      period = "weekly",
+                      resolution = EBIRD_RESOLUTION)
+
+  # eBird rasters use their own equal-area projection. Reproject OUR
+  # polygons to match the raster (much faster and more exact than
+  # reprojecting a 52-layer raster to match the polygons).
+  areas_proj <- st_transform(areas, crs(prop))
+
+  # extract(..., fun = sum) adds up every cell whose CENTER falls inside
+  # each polygon, separately for each of the 52 weekly layers.
+  # Result: one row per area, one column per week.
+  sums <- terra::extract(prop, vect(areas_proj), fun = sum, na.rm = TRUE,
+                         ID = FALSE)
+
+  # Layer names are the week dates ("2023-01-04", ...). Re-apply them
+  # explicitly so they can't get mangled into "X2023.01.04" on the way
+  # through data.frame().
+  names(sums) <- names(prop)
+
+  sums |>
+    mutate(area = areas$name) |>
+    pivot_longer(-area, names_to = "week_date", values_to = "share") |>
+    mutate(species_code = code,
+           week_date = as.Date(week_date))
+}
+
+shares <- map_dfr(selection$species_code, weekly_share) |>
+  left_join(selection |> select(species_code, common_name,
+                                season_start, season_end),
+            by = "species_code") |>
+  mutate(
+    # Flag weeks inside each species' own eBird migration season (the one set
+    # in config.R). Season dates are species-specific (hummingbirds move
+    # earlier than most warblers), so we don't use one fixed date range.
+    in_season = week_date >= as.Date(season_start) & week_date <= as.Date(season_end)
+  )
+
+write_csv(shares, file.path(PATHS$derived, "weekly_population_share.csv"))
+```
+
+## Step 4 · Summary table for the report
+
+```{r summary}
+season_summary <- shares |>
+  filter(in_season) |>
+  group_by(common_name, area) |>
+  summarise(
+    peak_week  = week_date[which.max(share)],
+    peak_share = max(share),     # max fraction of population in the area
+    .groups = "drop"
+  ) |>
+  mutate(peak_week = format(peak_week, "%b %d"),   # drop the nominal year
+         peak_share = scales::percent(peak_share, accuracy = 0.1))
+
+season_summary
+```
+
+## Step 5 · Passage curves
+
+```{r plot, fig.width=9, fig.height=6}
+p <- shares |>
+  filter(area == study_area$name) |>
+  ggplot(aes(week_date, share)) +
+  # Shade each species' migration season so the pulse is easy to see.
+  geom_rect(
+    data = \(d) distinct(d, common_name, season_start, season_end),
+    aes(xmin = as.Date(season_start), xmax = as.Date(season_end),
+        ymin = -Inf, ymax = Inf),
+    inherit.aes = FALSE, fill = "grey85"
+  ) +
+  geom_line(linewidth = 0.8) +
+  facet_wrap(~ common_name, scales = "free_y") +
+  scale_x_date(date_labels = "%b", date_breaks = "2 months") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Share of each population inside the Pacific Flyway study states",
+    subtitle = paste0("Weekly, typical year. Grey band = eBird's ", SEASON_LABEL,
+                      " migration season for that species."),
+    x = NULL, y = "Share of population",
+    caption = FIGURE_CAPTION
+  ) +
+  theme_minimal(base_size = 12)
+
+p
+ggsave(file.path(PATHS$figures, paste0("02_", SEASON_LABEL, "_passage_curves.png")),
+       p, width = 9, height = 6, dpi = 200)
+```
+
+## How to read the curves
+
+- A species that **breeds** in the study states climbs during spring
+  migration and stays high through summer.
+- A species that **passes through** (winters farther south, breeds farther
+  north) shows a **hump** in its migration season: a rise, then a drop.
+- Comparing the spring and fall humps for the same species is evidence for
+  **looped migration** (different routes each way): a higher spring hump means
+  more of the population routes through our states going north.
+- The **peak week** in the summary table is our estimate of peak passage.
+  Notebook 04 compares those weeks with radar-measured nightly volumes over
+  Southern California.

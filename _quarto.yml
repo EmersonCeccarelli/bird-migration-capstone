@@ -1,0 +1,25 @@
+# Quarto project file.
+# `quarto render` (in the Terminal, from this folder) renders the notebooks
+# below IN THIS ORDER, which matters: each one reads the previous one's
+# outputs. 00_setup is excluded because it installs packages and asks for
+# your key, which should be done by hand.
+project:
+  type: default
+  output-dir: _output
+  render:
+    - 01_species_check.qmd
+    - 02_ebird_abundance.qmd
+    - 03_birdflow_routes.qmd
+    - 04_radar_test_night.qmd
+
+format:
+  html:
+    toc: true
+    code-fold: show       # code visible but collapsible for non-coders
+    code-tools: true
+    embed-resources: true # each rendered page is one shareable .html file
+
+execute:
+  # Cache results so re-rendering doesn't re-download or re-run slow steps
+  # unless the code in that chunk changed.
+  cache: true

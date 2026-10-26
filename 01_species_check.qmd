@@ -1,0 +1,191 @@
+---
+title: "01 · Species check"
+subtitle: "Which species can we model, and which really use the Pacific Flyway?"
+format:
+  html:
+    toc: true
+execute:
+  warning: false
+  message: false
+---
+
+## SETUP
+
+Before building anything, we pick species that clear three checks:
+
+1. **BirdFlow model exists.** Estimated flight paths need a fitted BirdFlow
+   model. We started from the 60 vetted models in the June 2026 collection,
+   because a species without a model can't get routes.
+2. **Pacific Flyway use.** For every one of those 60 species, we measure the
+   share of its population inside our study states during migration (Step 1).
+   This is how we chose our species: by measured use of the flyway, not by
+   guesswork.
+3. **Quality for our season.** eBird scores every species' maps 0–3 for each
+   season, and the BirdFlow model must cover that season (Steps 2–3).
+
+The season comes from `R/config.R` (`SEASON_EBIRD`, `SEASON_BIRDFLOW`), so
+nothing here is hard-coded to spring or fall. Switching seasons means changing
+those two lines and re-running.
+
+**Output:** `data/derived/species_selection.csv`, which notebooks 02 and 03 read.
+
+```{r setup}
+source(here::here("R", "config.R"))       # shared settings
+source(here::here("R", "study_area.R"))   # study-area polygons
+
+library(ebirdst)
+library(BirdFlowR)
+library(terra)
+library(sf)
+library(dplyr)
+library(purrr)
+library(readr)
+```
+
+## Step 1 · Rank all available models by Pacific Flyway use
+
+```{r birdflow-index}
+# Small index of every model in the current BirdFlow collection
+# (default: the June 2026 release of 60 vetted models).
+index <- load_collection_index()
+```
+
+For each species, we sum eBird's seasonal **proportion of population**
+layer inside the study states. A value of 0.40 means about 40% of the
+species' population is in our states, on average, during that migration
+season. We compute both seasons so the season choice is also backed by data.
+
+The first run downloads the 27 km files for all 60 species (small, cached
+afterwards), so it takes 5–15 minutes. Later runs are fast.
+
+```{r flyway-screen}
+study_area <- study_states(merge = TRUE)
+
+#' Share of a species' population inside the study states for one season.
+#' Returns NA if the season failed eBird's review (no layer published) or
+#' anything else goes wrong, so one bad species doesn't stop the loop.
+flyway_share <- function(code, season) {
+  tryCatch({
+    ebirdst_download_status(code, pattern = paste0("_", EBIRD_RESOLUTION, "_"))
+    r <- load_raster(code, product = "proportion-population",
+                     period = "seasonal", resolution = EBIRD_RESOLUTION)
+    if (!season %in% names(r)) return(NA_real_)
+    terra::extract(r[[season]], vect(st_transform(study_area, crs(r))),
+                   fun = sum, na.rm = TRUE, ID = FALSE)[[1]]
+  }, error = function(e) NA_real_)
+}
+
+ranked <- index |>
+  select(common_name, species_code, model) |>
+  mutate(
+    spring_share = map_dbl(species_code, flyway_share, season = "prebreeding_migration"),
+    fall_share   = map_dbl(species_code, flyway_share, season = "postbreeding_migration")
+  ) |>
+  arrange(desc(pmax(spring_share, fall_share, na.rm = TRUE)))
+
+write_csv(ranked, file.path(PATHS$derived, "birdflow_models_ranked.csv"))
+
+# Species with > 10% of their population in the study states in either season.
+ranked |> filter(pmax(spring_share, fall_share, na.rm = TRUE) > 0.10)
+```
+
+**Result (team decision 10/25):** 16 species exceed 10%, then the shares drop
+off sharply (the next species is about 6%; eastern species are near 0%). Spring
+share was higher for 12 of those 16, consistent with western "looped"
+migration (La Sorte et al. 2014) and Horton et al.'s (2019) finding of more
+Pacific Flyway activity in spring. So spring is our core season, and we chose
+our species from this list (check `CANDIDATE_SPECIES` in config.R).
+
+## Step 2 · eBird quality for our season
+
+`ebirdst_runs` ships inside the ebirdst package and has one row per species,
+with each season's review score and date range. Its column names start with
+the season name, so we build them from `SEASON_EBIRD`.
+
+```{r ebird-quality}
+ebird_check <- ebirdst_runs |>
+  filter(species_code %in% CANDIDATE_SPECIES) |>
+  select(
+    species_code, common_name, scientific_name,
+    # Review score 0–3 for our season (0 = failed review). We require 2+.
+    season_quality = all_of(paste0(SEASON_EBIRD, "_quality")),
+    # Species-specific season dates. The year (e.g. 2023) is the eBird data
+    # version, not a real year: dates describe a TYPICAL year.
+    season_start   = all_of(paste0(SEASON_EBIRD, "_start")),
+    season_end     = all_of(paste0(SEASON_EBIRD, "_end"))
+  ) |>
+  # Some versions store the score as text ("3"); convert before comparing.
+  mutate(season_quality = as.integer(season_quality),
+         passes_ebird   = season_quality >= 2)
+
+ebird_check
+```
+
+## Step 3 · BirdFlow model covers our season
+
+The 2026 models are full-year, but older collections had season-only models
+(e.g. `amewoo_prebreeding`), so we check rather than assume. Loading a model
+downloads it once (tens to hundreds of MB) into BirdFlowR's cache.
+
+```{r birdflow-season}
+#' Does a species have a BirdFlow model covering our season?
+#' Returns one row; tryCatch() turns "season not in this model" into FALSE.
+check_birdflow_season <- function(code) {
+  rows <- index |> filter(species_code == code)
+
+  if (nrow(rows) == 0) {
+    return(tibble(species_code = code, bf_model = NA_character_,
+                  covers_season = FALSE, bf_note = "no model in collection"))
+  }
+
+  for (m in rows$model) {
+    bf <- load_model(m)
+    steps <- tryCatch(lookup_season_timesteps(bf, season = SEASON_BIRDFLOW),
+                      error = function(e) NULL)
+    if (!is.null(steps) && length(steps) > 1) {
+      return(tibble(species_code = code, bf_model = m, covers_season = TRUE,
+                    bf_note = paste(length(steps), "weekly timesteps")))
+    }
+  }
+
+  tibble(species_code = code, bf_model = paste(rows$model, collapse = ", "),
+         covers_season = FALSE, bf_note = "model(s) don't cover this season")
+}
+
+bf_check <- map_dfr(CANDIDATE_SPECIES, check_birdflow_season)
+bf_check
+```
+
+## Combine and save
+
+```{r select}
+selection <- ebird_check |>
+  left_join(bf_check, by = "species_code") |>
+  left_join(ranked |> select(species_code, spring_share, fall_share),
+            by = "species_code") |>
+  mutate(
+    #  "routes + abundance" = full treatment (animated flight paths)
+    #  "abundance only"     = eBird passes, but no BirdFlow model for this season
+    #  "drop"               = eBird quality too low for this season
+    use = case_when(
+      passes_ebird & covers_season ~ "routes + abundance",
+      passes_ebird                 ~ "abundance only",
+      TRUE                         ~ "drop"
+    )
+  ) |>
+  # Keep the priority order from config.R and cap the count.
+  arrange(match(species_code, CANDIDATE_SPECIES)) |>
+  mutate(selected = use != "drop" & cumsum(use != "drop") <= MAX_SPECIES)
+
+selection |>
+  select(common_name, season_quality, spring_share, fall_share, bf_model, use, selected)
+
+write_csv(selection, file.path(PATHS$derived, "species_selection.csv"))
+```
+
+## If a species fails
+
+All six should come back as `routes + abundance`. If one doesn't, swap in the
+next-best species from Step 1's list (e.g. Calliope Hummingbird, Golden-crowned
+Sparrow, etc.), update `CANDIDATE_SPECIES` in config.R with a dated comment, and
+re-run this notebook.

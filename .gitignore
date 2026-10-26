@@ -1,0 +1,40 @@
+# --- Secrets: NEVER commit -------------------------------------------------
+# The eBird access key lives in ~/.Renviron (your home folder), but ignore any
+# project-level copy too, just in case.
+.Renviron
+.Renviron.*
+
+# --- Big / re-downloadable data ---------------------------------------------
+# Raw radar scans (~15 MB each) and any stray raw rasters.
+data/raw/
+*.tif
+*.tiff
+*.hdf5
+*.h5
+
+# --- R / RStudio -------------------------------------------------------------
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# renv: commit renv.lock and renv/activate.R; ignore the package library.
+renv/library/
+renv/local/
+renv/cellar/
+renv/lock/
+renv/python/
+renv/sandbox/
+renv/staging/
+
+# --- Quarto outputs -----------------------------------------------------------
+/.quarto/
+_output/
+*_files/
+*.html
+
+# --- OS clutter ----------------------------------------------------------------
+.DS_Store
+.Rproj.user
+.httr-oauth
+.quarto

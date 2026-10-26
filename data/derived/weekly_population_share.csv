@@ -1,0 +1,625 @@
+area,week_date,share,species_code,common_name,season_start,season_end,in_season
+Pacific Flyway (study states),2023-01-04,0.0014708639351113106,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-01-11,0.001077794929983611,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-01-18,0.001020512046736144,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-01-25,8.54012835930007e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-02-01,8.116652800396196e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-02-08,8.524032760846012e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-02-15,7.78417645534546e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-02-22,7.799451341554686e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-03-01,8.859710892181738e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-03-08,0.0010158160021376261,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-03-15,9.769288182042146e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-03-22,7.646038704933744e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-03-29,6.814409988464831e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-04-05,7.67571881283402e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-04-12,0.004934631193918904,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+Pacific Flyway (study states),2023-04-19,0.09688310309047665,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+Pacific Flyway (study states),2023-04-26,0.316121737476351,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+Pacific Flyway (study states),2023-05-03,0.48873910976601564,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+Pacific Flyway (study states),2023-05-10,0.5437698344395585,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+Pacific Flyway (study states),2023-05-17,0.5536119172394933,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+Pacific Flyway (study states),2023-05-24,0.601813843745731,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+Pacific Flyway (study states),2023-05-31,0.5851358988986703,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+Pacific Flyway (study states),2023-06-07,0.5371895216101734,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+Pacific Flyway (study states),2023-06-14,0.5387631919531941,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-06-21,0.5408965537966424,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-06-28,0.5459329195245459,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-07-05,0.5530283035624564,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-07-12,0.5526668427310142,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-07-19,0.566041199176027,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-07-26,0.5965301343845226,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-08-02,0.625019416972691,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-08-09,0.6057221440046305,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-08-16,0.5843426808406775,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-08-23,0.5949542321493482,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-08-30,0.6406510911766645,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-09-06,0.6307412627190843,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-09-13,0.548216447774621,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-09-20,0.46319195722276163,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-09-27,0.3204540781300693,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-10-04,0.09323788590916138,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-10-11,0.022339123727078913,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-10-18,0.005645372357321321,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-10-25,0.003286933183403562,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-11-01,0.002731744622280985,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-11-08,0.0026039041326555434,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-11-15,0.0022393209100073364,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-11-22,0.0018125794481420598,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-11-29,0.001693969477344126,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-12-06,0.0014426950324377685,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-12-13,0.001525385401521362,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-12-20,0.0015936417887303378,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-12-27,0.0016845639942459911,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-01-04,0.0014708639351113106,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-01-11,0.001077794929983611,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-01-18,0.001020512046736144,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-01-25,8.54012835930007e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-02-01,8.116652800396196e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-02-08,8.524032760846012e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-02-15,7.78417645534546e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-02-22,7.799451341554686e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-03-01,8.859710892181738e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-03-08,0.0010158160021376261,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-03-15,9.769288182042146e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-03-22,7.646038704933744e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-03-29,6.814409988464831e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-04-05,7.67571881283402e-4,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-04-12,0.004921180989185814,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+California,2023-04-19,0.09583286281849723,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+California,2023-04-26,0.28017127795988017,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+California,2023-05-03,0.3146827932123415,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+California,2023-05-10,0.2342428340832612,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+California,2023-05-17,0.16429029787764193,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+California,2023-05-24,0.13706255009026336,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+California,2023-05-31,0.10688682567626984,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+California,2023-06-07,0.09497434477265188,westan,Western Tanager,2023-04-12,2023-06-07,TRUE
+California,2023-06-14,0.10054597242537966,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-06-21,0.10307369996178295,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-06-28,0.10476856982069194,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-07-05,0.10147060171087219,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-07-12,0.09570711592118641,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-07-19,0.09865111956929695,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-07-26,0.11289070644789945,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-08-02,0.1357109156392653,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-08-09,0.13733952585289444,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-08-16,0.13182546255382022,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-08-23,0.13315780194625404,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-08-30,0.1529795745955198,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-09-06,0.1675716117306365,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-09-13,0.16312308882697835,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-09-20,0.16374958436313136,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-09-27,0.12751583105318787,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-10-04,0.03891298173289215,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-10-11,0.011162774235344841,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-10-18,0.004295359199659288,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-10-25,0.0032468719088001308,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-11-01,0.0027266982428386655,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-11-08,0.0025977910525796233,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-11-15,0.0022393209100073364,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-11-22,0.0018125794481420598,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-11-29,0.001693969477344126,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-12-06,0.0014426950324377685,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-12-13,0.001525385401521362,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-12-20,0.0015936417887303378,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+California,2023-12-27,0.0016845639942459911,westan,Western Tanager,2023-04-12,2023-06-07,FALSE
+Pacific Flyway (study states),2023-01-04,0.006060579022005186,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-01-11,0.006868997694709833,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-01-18,0.006733506113960175,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-01-25,0.009525893248337525,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-02-01,0.011275676258719614,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-02-08,0.01590605157889513,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-02-15,0.012338804759565392,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-02-22,0.00981803320837571,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-03-01,0.00983575484042376,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-03-08,0.009176623226721858,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-03-15,0.009563957270984247,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-03-22,0.0038006419817975257,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-03-29,0.0013414808090601582,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-04-05,0.017045762770067086,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+Pacific Flyway (study states),2023-04-12,0.23203391981769528,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+Pacific Flyway (study states),2023-04-19,0.43749731952220827,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+Pacific Flyway (study states),2023-04-26,0.6306317348712582,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+Pacific Flyway (study states),2023-05-03,0.7672611088249823,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+Pacific Flyway (study states),2023-05-10,0.8096538922022773,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+Pacific Flyway (study states),2023-05-17,0.7886932701372871,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+Pacific Flyway (study states),2023-05-24,0.7672548523993896,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+Pacific Flyway (study states),2023-05-31,0.7704278402098339,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+Pacific Flyway (study states),2023-06-07,0.7605906582805915,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-06-14,0.7442727823654991,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-06-21,0.7234824027090099,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-06-28,0.7015096397769014,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-07-05,0.6778948995876135,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-07-12,0.6685253884696181,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-07-19,0.6615860550427328,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-07-26,0.6788008251111819,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-08-02,0.7343647835007232,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-08-09,0.7714844761905226,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-08-16,0.7418855355313951,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-08-23,0.7008194267646672,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-08-30,0.7086729233609788,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-09-06,0.7068034547917534,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-09-13,0.6437549749115306,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-09-20,0.5996415541279703,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-09-27,0.42036119374961345,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-10-04,0.16915757434253464,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-10-11,0.06243717138750071,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-10-18,0.03263262589916849,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-10-25,0.014545162299327785,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-11-01,0.00556614139713929,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-11-08,0.003554117518433486,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-11-15,0.002974874721985543,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-11-22,0.0029453223205564427,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-11-29,0.006148520123133494,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-12-06,0.0039870669488664134,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-12-13,0.002693937289677706,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-12-20,0.003904912387042714,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-12-27,0.00509522607035251,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-01-04,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-01-11,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-01-18,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-01-25,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-02-01,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-02-08,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-02-15,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-02-22,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-03-01,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-03-08,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-03-15,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-03-22,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-03-29,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-04-05,0.015007975820481079,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+California,2023-04-12,0.14546845019503962,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+California,2023-04-19,0.2574941519665117,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+California,2023-04-26,0.39481910473273274,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+California,2023-05-03,0.3699065017342491,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+California,2023-05-10,0.30275505755093945,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+California,2023-05-17,0.24454675810898152,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+California,2023-05-24,0.2001127700223151,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+California,2023-05-31,0.17074612999294914,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,TRUE
+California,2023-06-07,0.1483660640619746,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-06-14,0.14227004788131126,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-06-21,0.132236609049869,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-06-28,0.12126156263070698,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-07-05,0.11197750486439872,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-07-12,0.10195602235387469,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-07-19,0.09718595442620881,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-07-26,0.10919159458694594,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-08-02,0.13329683883989674,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-08-09,0.13075151901080062,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-08-16,0.12050122225787163,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-08-23,0.10087458783789316,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-08-30,0.10834663035973335,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-09-06,0.11912990237641452,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-09-13,0.13473447197770838,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-09-20,0.18188343859753786,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-09-27,0.13492157102928104,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-10-04,0.044130575868621236,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-10-11,8.893701706256252e-4,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-10-18,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-10-25,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-11-01,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-11-08,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-11-15,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-11-22,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-11-29,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-12-06,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-12-13,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-12-20,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+California,2023-12-27,0,lazbun,Lazuli Bunting,2023-04-05,2023-05-31,FALSE
+Pacific Flyway (study states),2023-01-04,0.002681159371377362,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-01-11,0.0023764883312651364,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-01-18,0.002504210918004901,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-01-25,0.004225036801017268,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-02-01,0.002678398067018861,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-02-08,0.0019996414755496517,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-02-15,0.0023342596143720584,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-02-22,0.002692347352763136,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-03-01,0.001831773949163562,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-03-08,0.0022166261835536716,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-03-15,0.0021812971319832286,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-03-22,0.019647810413971456,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+Pacific Flyway (study states),2023-03-29,0.1051681106914657,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+Pacific Flyway (study states),2023-04-05,0.2677799517323365,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+Pacific Flyway (study states),2023-04-12,0.5435568329012312,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+Pacific Flyway (study states),2023-04-19,0.6609595905763399,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+Pacific Flyway (study states),2023-04-26,0.8237111042000151,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+Pacific Flyway (study states),2023-05-03,0.6752625411945701,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+Pacific Flyway (study states),2023-05-10,0.6023157163771202,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+Pacific Flyway (study states),2023-05-17,0.5863448810427769,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+Pacific Flyway (study states),2023-05-24,0.5805456662757962,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+Pacific Flyway (study states),2023-05-31,0.571657820574444,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+Pacific Flyway (study states),2023-06-07,0.5807784385399941,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-06-14,0.5914916349554744,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-06-21,0.5995102875298528,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-06-28,0.5804361823705335,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-07-05,0.5813147828559977,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-07-12,0.5860922568272144,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-07-19,0.5796063650610677,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-07-26,0.5641561848977403,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-08-02,0.5070733008998047,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-08-09,0.5445323432776945,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-08-16,0.5975687446789948,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-08-23,0.5832332947841223,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-08-30,0.523206849056919,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-09-06,0.4797406144087688,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-09-13,0.4070371075842445,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-09-20,0.318194693327996,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-09-27,0.22263336941955458,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-10-04,0.13542758639687236,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-10-11,0.09085878234805023,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-10-18,0.023560509657954753,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-10-25,0.018450423891181345,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-11-01,0.007791872830296143,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-11-08,0.004103004160015189,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-11-15,0.003627722784813159,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-11-22,0.002070741876877946,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-11-29,0.002118973297399407,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-12-06,0.0018786378061577125,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-12-13,0.0020132462539095286,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-12-20,0.0024519368557776033,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-12-27,0.002722941078218355,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-01-04,7.379490511993936e-5,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-01-11,7.869517071412702e-5,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-01-18,1.1998398736068339e-4,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-01-25,1.539101167509216e-4,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-02-01,6.442452058763593e-5,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-02-08,3.678800385387149e-5,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-02-15,3.689709683385445e-5,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-02-22,2.072983204470802e-5,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-03-01,1.959630668579848e-5,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-03-08,1.0672905546016409e-5,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-03-15,3.831620915661915e-6,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-03-22,7.026212956589006e-4,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+California,2023-03-29,0.04758249294354755,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+California,2023-04-05,0.20259732933072883,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+California,2023-04-12,0.4278133382304077,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+California,2023-04-19,0.4725821422057379,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+California,2023-04-26,0.46740232569618456,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+California,2023-05-03,0.24108096806389767,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+California,2023-05-10,0.19767177322853513,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+California,2023-05-17,0.1843079160603338,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+California,2023-05-24,0.19021702417472852,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+California,2023-05-31,0.19797597491253782,casvir,Cassin's Vireo,2023-03-22,2023-05-31,TRUE
+California,2023-06-07,0.21464243437196728,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-06-14,0.21893715620612397,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-06-21,0.2193590980708109,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-06-28,0.21506532159668268,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-07-05,0.21059232318782506,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-07-12,0.2025632993969566,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-07-19,0.19950348267514073,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-07-26,0.19808415309762495,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-08-02,0.17659833801675973,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-08-09,0.19066823405262312,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-08-16,0.19345309443957603,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-08-23,0.17586022692722736,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-08-30,0.14935366216951707,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-09-06,0.11529815791649867,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-09-13,0.08739265511468375,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-09-20,0.058119462316881254,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-09-27,0.03894885486363364,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-10-04,0.023724966739109732,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-10-11,0.02375319517545904,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-10-18,0.0025079378081045434,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-10-25,7.001179656072054e-4,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-11-01,3.372145052367159e-4,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-11-08,1.5035503940907802e-4,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-11-15,9.276601747387758e-5,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-11-22,1.2734496635857795e-4,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-11-29,2.3529903813823694e-4,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-12-06,1.4184738006406405e-4,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-12-13,1.990038231269864e-4,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-12-20,2.0562825875458657e-4,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+California,2023-12-27,2.779059411750495e-4,casvir,Cassin's Vireo,2023-03-22,2023-05-31,FALSE
+Pacific Flyway (study states),2023-01-04,0.9073373762341106,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-01-11,0.9096343856306106,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-01-18,0.9123704373338839,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-01-25,0.9172327772483726,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-02-01,0.9154873367900791,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-02-08,0.9152962907770217,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-02-15,0.9138724197237487,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-02-22,0.9080367332698174,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-03-01,0.907194988299878,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-03-08,0.9121284988990368,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-03-15,0.9117591797340765,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-03-22,0.9138873024862448,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-03-29,0.9141208220435715,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+Pacific Flyway (study states),2023-04-05,0.9143827573375063,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+Pacific Flyway (study states),2023-04-12,0.9120855504808674,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+Pacific Flyway (study states),2023-04-19,0.818111627419924,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+Pacific Flyway (study states),2023-04-26,0.437085691664322,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-03,0.18508855818450343,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-10,0.04535067712424734,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-17,8.570883677521124e-4,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-24,5.10590268731903e-7,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-31,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-06-07,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-06-14,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-06-21,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-06-28,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-07-05,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-07-12,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-07-19,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-07-26,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-02,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-09,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-16,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-23,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-30,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-09-06,0.006759282151051593,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-09-13,0.12513232526578122,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-09-20,0.6815491558350288,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-09-27,0.8896887779504112,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-10-04,0.9001663882265944,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-10-11,0.890166541497706,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-10-18,0.8933974843164947,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-10-25,0.8933257068613898,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-01,0.891007083448244,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-08,0.8919622756208128,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-15,0.8919888388147683,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-22,0.8947667539104032,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-29,0.8981846816311645,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-12-06,0.9011218748732119,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-12-13,0.8995546446869938,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-12-20,0.9004074056452183,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-12-27,0.9043094906781732,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-01-04,0.7409529277306319,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-01-11,0.7546187320222089,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-01-18,0.7549550522555819,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-01-25,0.764817788820551,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-02-01,0.7590732056603429,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-02-08,0.7583326196381677,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-02-15,0.7481597095083998,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-02-22,0.7380084737851575,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-03-01,0.736469473651141,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-03-08,0.7476871684611979,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-03-15,0.7449365801585373,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-03-22,0.752073651048704,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-03-29,0.748611471549026,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+California,2023-04-05,0.7510824872574631,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+California,2023-04-12,0.743962718900093,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+California,2023-04-19,0.6016017318545437,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+California,2023-04-26,0.23633457663186164,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+California,2023-05-03,0.02052158462879561,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+California,2023-05-10,2.991670108940525e-4,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+California,2023-05-17,4.6991329668344406e-5,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+California,2023-05-24,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,TRUE
+California,2023-05-31,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-06-07,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-06-14,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-06-21,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-06-28,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-07-05,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-07-12,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-07-19,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-07-26,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-08-02,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-08-09,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-08-16,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-08-23,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-08-30,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-09-06,0,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-09-13,0.0053042756217109854,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-09-20,0.11440372591437153,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-09-27,0.35978396261066337,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-10-04,0.4811673245528709,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-10-11,0.5648023317039588,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-10-18,0.5884646198828705,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-10-25,0.6356059835727592,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-11-01,0.6754221952675152,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-11-08,0.6915065274429253,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-11-15,0.693160420314598,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-11-22,0.6964741022850376,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-11-29,0.7043517809590867,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-12-06,0.7008195704304399,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-12-13,0.69668776999589,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-12-20,0.7021483070697059,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+California,2023-12-27,0.7080039459337968,gocspa,Golden-crowned Sparrow,2023-03-29,2023-05-24,FALSE
+Pacific Flyway (study states),2023-01-04,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-01-11,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-01-18,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-01-25,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-02-01,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-02-08,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-02-15,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-02-22,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-03-01,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-03-08,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+Pacific Flyway (study states),2023-03-15,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+Pacific Flyway (study states),2023-03-22,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+Pacific Flyway (study states),2023-03-29,0.006679555492155487,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+Pacific Flyway (study states),2023-04-05,0.22950373479307018,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+Pacific Flyway (study states),2023-04-12,0.31409788707833286,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+Pacific Flyway (study states),2023-04-19,0.39102339519968154,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+Pacific Flyway (study states),2023-04-26,0.4776670350661334,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-03,0.4778789804092298,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-10,0.4733467810328875,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-17,0.5019449442054906,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-24,0.5173201464633621,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-31,0.5021587608700884,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-06-07,0.4986291797818012,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-06-14,0.4901956922498698,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-06-21,0.4842234974461235,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-06-28,0.46624414365783196,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-07-05,0.45515959788144755,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-07-12,0.4978715615834517,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-07-19,0.4980226358766231,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-07-26,0.5063768529848858,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-02,0.4928540326714028,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-09,0.4497093201127882,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-16,0.38737127877459443,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-23,0.32246603775638505,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-30,0.3021778927065384,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-09-06,0.24015344657664173,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-09-13,0.2437269212865658,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-09-20,0.05241328134593459,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-09-27,0.016696845986189146,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-10-04,1.5940596131258644e-4,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-10-11,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-10-18,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-10-25,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-01,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-08,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-15,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-22,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-29,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-12-06,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-12-13,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-12-20,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-12-27,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-01-04,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-01-11,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-01-18,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-01-25,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-02-01,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-02-08,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-02-15,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-02-22,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-03-01,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-03-08,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+California,2023-03-15,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+California,2023-03-22,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+California,2023-03-29,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+California,2023-04-05,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+California,2023-04-12,5.8316454669693485e-6,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+California,2023-04-19,3.271125697210664e-4,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+California,2023-04-26,7.362903400007781e-4,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+California,2023-05-03,0.0010253825158201835,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+California,2023-05-10,0.0023820272281227517,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+California,2023-05-17,0.0030306394655781332,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+California,2023-05-24,0.003561726034604362,virwar,Virginia's Warbler,2023-03-08,2023-05-24,TRUE
+California,2023-05-31,0.0032521644834559993,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-06-07,0.0020527202659650357,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-06-14,0.0017979280205508985,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-06-21,0.0018917811448773136,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-06-28,0.002132226248704683,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-07-05,0.0035358680697754608,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-07-12,0.0034995912328668055,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-07-19,0.00360289802938496,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-07-26,0.003257018020576652,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-08-02,0.0012775505892932415,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-08-09,0.0013726449819841946,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-08-16,5.773269994051589e-4,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-08-23,2.578530933305956e-4,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-08-30,0.001093992289952439,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-09-06,0.003221491030217294,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-09-13,0.001862497805291241,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-09-20,0.001442919150349553,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-09-27,4.5939227766211843e-4,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-10-04,1.5940596131258644e-4,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-10-11,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-10-18,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-10-25,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-11-01,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-11-08,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-11-15,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-11-22,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-11-29,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-12-06,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-12-13,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-12-20,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+California,2023-12-27,0,virwar,Virginia's Warbler,2023-03-08,2023-05-24,FALSE
+Pacific Flyway (study states),2023-01-04,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-01-11,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-01-18,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-01-25,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-02-01,1.1874988877025316e-4,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-02-08,2.75138931328911e-4,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-02-15,0.0016398314160142036,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-02-22,0.0018528026180320012,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-03-01,0.024037672241775,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-03-08,0.05779295415686647,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-03-15,0.11752904045715695,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-03-22,0.5887739753134156,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-03-29,0.6718865840307444,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-04-05,0.6256252177693113,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-04-12,0.5712663360245642,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-04-19,0.44643029241717613,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-04-26,0.382173690048603,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-03,0.2843710867778668,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-10,0.24140509446351643,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-17,0.26555918373480836,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-24,0.26269235433454696,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+Pacific Flyway (study states),2023-05-31,0.2701602542200021,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-06-07,0.25696451518331287,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-06-14,0.2741939313622197,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-06-21,0.29911883230761305,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-06-28,0.32811655593542355,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-07-05,0.359504271323857,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-07-12,0.3620725156394826,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-07-19,0.3562858627339267,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-07-26,0.36952513071443605,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-02,0.4157998134248828,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-09,0.5002954715878332,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-16,0.35288176068911525,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-23,0.25319376003756133,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-08-30,0.18827490857597695,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-09-06,0.14689135447974877,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-09-13,0.09414637567419959,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-09-20,0.07052178411640853,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-09-27,0.019550028310277412,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-10-04,5.583322063102969e-4,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-10-11,8.331152343998838e-5,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-10-18,5.700236670236336e-5,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-10-25,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-01,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-08,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-15,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-22,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-11-29,2.2663541585643543e-6,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-12-06,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-12-13,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-12-20,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+Pacific Flyway (study states),2023-12-27,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-01-04,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-01-11,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-01-18,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-01-25,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-02-01,1.1704371968335181e-4,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-02-08,2.726565107877832e-4,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-02-15,0.0016352035422642075,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-02-22,0.001704047219845961,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-03-01,0.00942044200928649,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-03-08,0.03295924225039926,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-03-15,0.03800480832796893,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-03-22,0.035348448171134805,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-03-29,0.03871340329351369,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-04-05,0.033925701324278634,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-04-12,0.038112454198198975,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-04-19,0.025462807249141406,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-04-26,0.01060869483899296,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-05-03,0.002676427777146273,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-05-10,0.0025037546434987235,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-05-17,7.849236494053002e-4,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-05-24,2.702138379504504e-4,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,TRUE
+California,2023-05-31,1.0901158270826272e-4,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-06-07,7.41876092433813e-5,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-06-14,0.001299298518233627,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-06-21,0.0055874493178862394,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-06-28,0.02933944633628016,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-07-05,0.05104452274051141,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-07-12,0.06120768472734994,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-07-19,0.061093340297844634,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-07-26,0.06950484901059895,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-08-02,0.08688780985062294,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-08-09,0.12910163307105904,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-08-16,0.09978699510725164,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-08-23,0.07230950030964323,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-08-30,0.06024601115609585,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-09-06,0.04766778266161964,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-09-13,0.03748398915786311,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-09-20,0.023619174577561353,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-09-27,0.0037393983552647114,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-10-04,2.722878271015361e-4,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-10-11,1.777790930646006e-5,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-10-18,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-10-25,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-11-01,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-11-08,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-11-15,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-11-22,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-11-29,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-12-06,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-12-13,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-12-20,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE
+California,2023-12-27,0,rufhum,Rufous Hummingbird,2023-02-01,2023-05-24,FALSE

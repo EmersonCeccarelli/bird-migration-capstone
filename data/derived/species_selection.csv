@@ -1,0 +1,7 @@
+species_code,common_name,scientific_name,season_quality,season_start,season_end,passes_ebird,bf_model,covers_season,bf_note,spring_share,fall_share,use,selected
+westan,Western Tanager,Piranga ludoviciana,3,2023-04-12,2023-06-07,TRUE,westan_best_dg,TRUE,11 weekly timesteps,0.49070456452761846,0.47079181642584444,routes + abundance,TRUE
+lazbun,Lazuli Bunting,Passerina amoena,3,2023-04-05,2023-05-31,TRUE,lazbun_best_mo,TRUE,11 weekly timesteps,0.6879829203051031,0.6673837008879673,routes + abundance,TRUE
+casvir,Cassin's Vireo,Vireo cassinii,3,2023-03-22,2023-05-31,TRUE,casvir_best_mo,TRUE,13 weekly timesteps,0.5416375898590324,0.3334403486596571,routes + abundance,TRUE
+gocspa,Golden-crowned Sparrow,Zonotrichia atricapilla,3,2023-03-29,2023-05-24,TRUE,gocspa_best_mo,TRUE,11 weekly timesteps,0.22047078186975178,0.39162185173411057,routes + abundance,TRUE
+virwar,Virginia's Warbler,Leiothlypis virginiae,3,2023-03-08,2023-05-24,TRUE,virwar_best_dg,TRUE,14 weekly timesteps,0.4125999661569324,0.26773913686622564,routes + abundance,TRUE
+rufhum,Rufous Hummingbird,Selasphorus rufus,3,2023-02-01,2023-05-24,TRUE,rufhum_best_ll,TRUE,19 weekly timesteps,0.23299462955121442,0.25181885005261684,routes + abundance,TRUE

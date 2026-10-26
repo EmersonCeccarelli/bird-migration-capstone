@@ -1,0 +1,219 @@
+---
+title: "03 · BirdFlow routes"
+subtitle: "Estimated flight paths for each species"
+format:
+  html:
+    toc: true
+execute:
+  warning: false
+  message: false
+---
+
+## What BirdFlow does (plain-language version)
+
+eBird tells us **where** a species is each week, but not **which birds went
+where**. It's like having 52 weekly photos of a crowd without knowing how
+any one person moved between photos.
+
+BirdFlow (Fuentes et al. 2023) fills that gap. It learns week-to-week
+movement probabilities that (a) reproduce eBird's weekly maps and (b) favor
+energetically cheaper moves, tuned against real GPS-tracked birds. We can
+then **simulate** individual birds: start one somewhere in the species'
+distribution at the start of the migration season, step it forward week by week by drawing from those
+probabilities, and record the path.
+
+**These are synthetic routes, not tracked birds.** Every figure and the
+website must say so. Their value is in the aggregate: 200 simulated birds
+show the shape of the migration, but no single line is a real bird.
+
+**Outputs** (`<season>` comes from `SEASON_LABEL` in config.R):
+
+- `data/derived/routes/<species>_<season>_routes.geojson`: one point per bird
+  per week (for the animated map)
+- `data/derived/routes/<species>_<season>_lines.geojson`: one line per bird
+  (for static maps)
+- `figures/03_<season>_routes_<species>.png`
+
+```{r setup}
+source(here::here("R", "config.R"))
+
+library(BirdFlowR)
+library(sf)
+library(dplyr)
+library(purrr)
+library(readr)
+library(ggplot2)
+
+# Only species with a BirdFlow model that covers our season (decided in 01).
+route_species <- read_csv(file.path(PATHS$derived, "species_selection.csv"),
+                          show_col_types = FALSE) |>
+  filter(selected, use == "routes + abundance")
+
+route_species |> select(species_code, common_name, bf_model)
+```
+
+## Study area (same definition as notebook 02)
+source(here::here("R", "study_area.R"))
+
+states <- study_states()   # one polygon per state, CONUS Albers (EPSG:5070)
+
+# One merged polygon for the whole flyway study area, plus the focus state.
+study_area <- states |> summarise(name = "Pacific Flyway (study states)")
+focus_area <- states |> filter(state == FOCUS_STATE) |>
+  mutate(name = tools::toTitleCase(FOCUS_STATE)) |> select(name)
+
+areas <- bind_rows(study_area, focus_area)
+
+ggplot(states) + geom_sf() + labs(title = "Study area states") + theme_minimal()
+
+```{r study-area}
+# Shared definition from R/study_area.R: one merged polygon, EPSG:5070.
+source(here::here("R", "study_area.R"))
+study_area <- study_states(merge = TRUE)
+
+# Basemap of North + Central America for context in the figures.
+basemap <- maps::map("world", regions = c("USA", "Canada", "Mexico",
+                     "Guatemala", "Belize", "Honduras", "El Salvador",
+                     "Nicaragua", "Costa Rica", "Panama"),
+                     plot = FALSE, fill = TRUE) |>
+  st_as_sf()
+# Same datum fix as in R/study_area.R: label as WGS84 so plotting never
+# depends on downloading PROJ correction grids.
+basemap <- suppressWarnings(st_set_crs(basemap, 4326))
+```
+
+## Generate routes
+
+```{r route-fn}
+#' Simulate migration routes for one species and save them as GeoJSON.
+#'
+#' Returns the route points (sf) invisibly so we can also plot them here.
+simulate_routes <- function(code, model_name) {
+
+  # load_model() downloads the model once and caches it locally. The cache
+  # lives outside our repo (BirdFlowR's own folder), like the eBird data.
+  bf <- load_model(model_name)
+
+  # Re-set the seed for EACH species, so a species' routes don't change
+  # when we add or remove another species from the list.
+  set.seed(RANDOM_SEED)
+
+  # route() picks N_ROUTES starting cells by sampling the species'
+  # distribution at the start of the season, then walks each simulated bird
+  # forward one week at a time until the season ends.
+  # SEASON_BIRDFLOW ("spring" or "fall") comes from config.R; BirdFlowR
+  # treats them as aliases for pre-/post-breeding migration.
+  # season_buffer = 1 (the default) adds one week on each side of eBird's
+  # season dates so birds have time to "depart" and "arrive".
+  # NOTE: older tutorials use route_migration(); it's deprecated — route()
+  # is its replacement.
+  rts <- route(bf, n = N_ROUTES, season = SEASON_BIRDFLOW)
+
+  # rts is a list; the table of points lives in rts$data. route() already
+  # converted each point to lon/lat (WGS84), which is what web maps need,
+  # so we build the sf object straight from those columns.
+  pts <- rts$data |>
+    st_as_sf(coords = c("lon", "lat"), crs = 4326) |>
+    transmute(
+      species_code = code,
+      route_id,
+      date,                       # week of the typical year
+      timestep,                   # eBird week number (1–52)
+      stay_len                    # weeks spent at this cell (stopovers > 1)
+    )
+
+  # One line per simulated bird, drawn through its weekly points in order.
+  lines <- pts |>
+    arrange(route_id, date) |>
+    group_by(species_code, route_id) |>
+    summarise(do_union = FALSE, .groups = "drop") |>
+    st_cast("LINESTRING")
+
+  # Flag routes that pass through our study area. We keep ALL routes (they
+  # show the species' full migration) but the flag lets the website
+  # highlight the ones that actually use the Pacific Flyway.
+  # The test runs in the study area's projected CRS (EPSG:5070), which is
+  # faster and avoids the spherical-geometry issues noted in R/study_area.R.
+  lines$crosses_study_area <-
+    lengths(st_intersects(st_transform(lines, st_crs(study_area)), study_area)) > 0
+  pts <- pts |>
+    left_join(st_drop_geometry(lines) |> select(route_id, crosses_study_area),
+              by = "route_id")
+
+  # Save as GeoJSON: an open, text-based format that R, QGIS, ArcGIS and
+  # web libraries (Leaflet, deck.gl) all read. These are DERIVED products —
+  # simulated paths — not raw eBird data, so they may go on the website.
+  # delete_dsn = TRUE overwrites the file if we re-run the notebook.
+  st_write(pts, file.path(PATHS$routes, paste0(code, "_", SEASON_LABEL, "_routes.geojson")),
+           delete_dsn = TRUE, quiet = TRUE)
+  st_write(lines, file.path(PATHS$routes, paste0(code, "_", SEASON_LABEL, "_lines.geojson")),
+           delete_dsn = TRUE, quiet = TRUE)
+
+  invisible(list(points = pts, lines = lines))
+}
+```
+
+```{r run}
+routes <- map2(route_species$species_code, route_species$bf_model,
+               simulate_routes) |>
+  set_names(route_species$species_code)
+```
+
+## Quick checks
+
+How many simulated birds per species pass through the study states? This is
+the first rough answer to 'how much does this species use the Pacific
+Flyway?' It cross-checks the population shares from notebook 02: a species
+with a high share there should have a high fraction of routes here.
+
+```{r check}
+map_dfr(routes, \(r) st_drop_geometry(r$lines)) |>
+  group_by(species_code) |>
+  summarise(routes = n(),
+            through_study_area = sum(crosses_study_area),
+            pct = scales::percent(mean(crosses_study_area)))
+```
+
+## Static maps
+
+```{r maps, fig.width=7, fig.height=7}
+plot_routes <- function(code) {
+  name <- route_species$common_name[route_species$species_code == code]
+  lines <- routes[[code]]$lines
+
+  p <- ggplot() +
+    geom_sf(data = basemap, fill = "grey95", colour = "grey70", linewidth = 0.2) +
+    geom_sf(data = study_area, fill = NA, colour = "grey30", linewidth = 0.4) +
+    # Routes that miss the study area: faint, for context.
+    geom_sf(data = filter(lines, !crosses_study_area),
+            colour = "grey60", alpha = 0.25, linewidth = 0.3) +
+    # Routes through the Pacific Flyway: the story.
+    geom_sf(data = filter(lines, crosses_study_area),
+            colour = "#1f6fb2", alpha = 0.45, linewidth = 0.4) +
+    coord_sf(xlim = c(-140, -75), ylim = c(5, 65)) +
+    labs(
+      title = paste(name, "— simulated", SEASON_LABEL, "routes"),
+      subtitle = paste(N_ROUTES, "synthetic birds from a BirdFlow model;",
+                       "blue = passes through the study states"),
+      caption = FIGURE_CAPTION
+    ) +
+    theme_void(base_size = 11)
+
+  ggsave(file.path(PATHS$figures, paste0("03_", SEASON_LABEL, "_routes_", code, ".png")),
+         p, width = 7, height = 7, dpi = 200)
+  p
+}
+
+walk(route_species$species_code, \(code) print(plot_routes(code)))
+```
+
+## Limitations to carry into the report
+
+- Routes are **model estimates**. BirdFlow's accuracy varies by species;
+  the BirdFlow team publishes validation reports for each model in the
+  collection, so cite the one for each species we use.
+- BirdFlow cells are coarse (on the order of 100+ km), so routes show
+  broad corridors, not exact paths.
+- Routes inherit eBird's biases: areas with few birders (much of Mexico and
+  Central America) have less certain abundance, so routes there are less
+  certain too.

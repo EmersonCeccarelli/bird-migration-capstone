@@ -1,0 +1,338 @@
+---
+title: "05 · Radar season"
+subtitle: "Nightly migration over Southern California, all of spring"
+format:
+  html:
+    toc: true
+execute:
+  warning: false
+  message: false
+  eval: false   # long-running; run the chunks by hand (see "How to run")
+---
+
+## What this notebook does
+
+Notebook 04 proved the radar method on one 2-hour window. This notebook runs
+the same method for **every night of spring migration** at each Southern
+California radar station, and produces one row per station per night:
+how many birds passed, when traffic peaked, and which way they flew.
+
+## The storage problem, and our solution
+
+A full night at one station is about 70 radar scans, roughly 0.5–1 GB of raw
+data. All of spring at three stations is **over 150 GB**. But we only need the *bird profiles* that vol2bird extracts, which are
+tiny (kilobytes per night). So for each night we:
+
+1. **download** that night's raw scans into a temporary folder,
+2. **process** them into bird profiles,
+3. **save** the small results,
+4. **delete** the temporary folder, then move to the next night.
+
+At most one night of raw data is ever on disk. We also record how much raw
+data each night was, so the report can state the true volume we processed.
+
+**It can resume.** Each finished night is saved as its own file. If the run
+stops (laptop sleeps, Wi-Fi drops, RStudio closes), re-running skips every
+night already done. You can run the season over several sittings.
+
+## How to run
+
+1. Run **Setup** and **Settings**.
+2. **First, a timing test:** keep `TEST_RUN <- TRUE` (one station, one week).
+   Check the timing and results, then set it to `FALSE` for the full season.
+3. Run **Process the season**. Expect roughly 2–5 minutes per night,
+   mostly downloading; a full station-season can take a few hours. Leave
+   RStudio open and plugged in; interruptions are fine (see above).
+4. Run **Combine** and **Plot** whenever you want an up-to-date picture.
+   They only read finished nights.
+
+```{r setup}
+source(here::here("R", "config.R"))
+
+library(bioRad)     # NEXRAD download + profile tools (uses vol2birdR inside)
+library(dplyr)
+library(purrr)
+library(readr)
+library(tidyr)
+library(ggplot2)
+library(lubridate)
+
+# Downloads of large radar files can exceed R's default 60-second timeout.
+options(timeout = 600)
+```
+
+## Settings
+
+```{r settings}
+# --- Which nights ------------------------------------------------------------
+# Spring window: matches BirdCast's spring monitoring season (Mar 1 – Jun 15),
+# which brackets the spring migration dates of all our songbird species.
+# These are LOCAL dates: "2026-04-27" means the night that starts on the
+# evening of April 27.
+SEASON_START <- as.Date("2026-03-01")
+SEASON_END   <- as.Date("2026-06-15")
+
+# --- Which stations ----------------------------------------------------------
+# From config.R (KNKX San Diego, KSOX Santa Ana Mtns, KVTX Los Angeles).
+# Verify the codes on NOAA's station map before the full run.
+STATIONS <- RADAR_STATIONS
+
+# --- Timing test ---------------------------------------------------------------
+# TRUE  = one station, one week (to measure speed before committing hours).
+# FALSE = every station, every night of the season.
+TEST_RUN <- FALSE
+
+if (TEST_RUN) {
+  STATIONS     <- STATIONS[1]
+  SEASON_START <- as.Date("2026-04-21")
+  SEASON_END   <- as.Date("2026-04-27")
+}
+
+nights <- seq(SEASON_START, SEASON_END, by = "day")
+
+NIGHT_EVERY <- c(KNKX = 1, KSOX = 1, KVTX = 1)
+
+jobs <- map_dfr(STATIONS, \(s) tibble(
+  station = s,
+  night   = nights[seq(1, length(nights), by = NIGHT_EVERY[[s]])]
+))
+
+message(nrow(jobs), " station-nights planned")
+
+# --- Where results go ------------------------------------------------------------
+# Small, permanent results (kept, committed to Git):
+RADAR_OUT <- file.path(PATHS$derived, "radar", SEASON_LABEL)
+dir.create(file.path(RADAR_OUT, "profiles"), recursive = TRUE, showWarnings = FALSE)
+dir.create(file.path(RADAR_OUT, "nights"),   recursive = TRUE, showWarnings = FALSE)
+# Big, temporary raw scans (deleted after each night; data/raw is git-ignored):
+RADAR_TMP <- file.path(PATHS$radar, "tmp")
+
+message(length(STATIONS), " station(s) x ", length(nights), " nights = ",
+        length(STATIONS) * length(nights), " station-nights")
+```
+
+## The one-night function
+
+Everything for one station-night happens inside `process_night()`.
+
+```{r process-night}
+#' Download, process, save and clean up ONE station-night.
+#'
+#' @param station NEXRAD code, e.g. "KNKX".
+#' @param night   Local date the night STARTS on (evening of this date).
+#' @return Invisibly, the one-row nightly summary (also saved to disk).
+process_night <- function(station, night) {
+
+  tag        <- paste0(station, "_", format(night, "%Y-%m-%d"))
+  night_file <- file.path(RADAR_OUT, "nights",   paste0(tag, ".csv"))
+  prof_file  <- file.path(RADAR_OUT, "profiles", paste0(tag, ".rds"))
+
+  # --- Resume: skip nights already finished -----------------------------------
+  if (file.exists(night_file)) {
+    message(tag, ": already done, skipping")
+    return(invisible(NULL))
+  }
+
+  # --- Time window ------------------------------------------------------------
+  # Radar files are stamped in UTC. Pacific time is UTC-7 (PDT) or UTC-8 (PST),
+  # so a local night (sunset to sunrise) falls between about 00:00 and
+  # 15:00 UTC on the NEXT calendar day. We download that whole window and let
+  # check_night() (below) keep only the scans between sunset and sunrise.
+  utc_day  <- night + 1
+  date_min <- as.POSIXct(paste(utc_day, "00:00"), tz = "UTC")
+  date_max <- as.POSIXct(paste(utc_day, "15:00"), tz = "UTC")
+
+  # --- Temporary folder for this night's raw scans ----------------------------
+  # One folder per station-night. on.exit() deletes it when this function
+  # finishes, whether it succeeded OR failed, so raw data never piles up.
+  # It only ever deletes this one temporary folder.
+  tmp <- file.path(RADAR_TMP, tag)
+  dir.create(tmp, recursive = TRUE, showWarnings = FALSE)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+
+  t0 <- Sys.time()
+
+  # Helper: save a summary row that says why a night has no data, so the
+  # resume logic doesn't retry known-empty nights forever.
+  save_status <- function(status, n_files = 0, raw_mb = 0) {
+    row <- tibble(station, night, status, n_scans = 0L, n_files, raw_mb,
+                  total_passage = NA_real_, peak_mtr = NA_real_,
+                  peak_time_local = NA_character_, mean_mtr = NA_real_,
+                  mean_vid = NA_real_, mean_ff = NA_real_, mean_dd = NA_real_,
+                  minutes = round(as.numeric(difftime(Sys.time(), t0, units = "mins")), 2))
+    write_csv(row, night_file)
+    invisible(row)
+  }
+
+  # --- 1. Download ------------------------------------------------------------
+  # NOAA's public archive on AWS. A station can be offline for maintenance,
+  # so "no files" is recorded as a status rather than treated as a crash.
+  dl <- tryCatch(
+    download_pvolfiles(date_min, date_max, radar = station, directory = tmp),
+    error = function(e) e
+  )
+  files <- list.files(tmp, recursive = TRUE, full.names = TRUE)
+  files <- files[!grepl("_MDM$", files)]   # skip small metadata files
+  raw_mb <- round(sum(file.size(files)) / 1e6)
+
+  if (length(files) == 0) {
+    message(tag, ": no radar files (station offline?)")
+    return(save_status("no data"))
+  }
+
+  # --- 2. Process -------------------------------------------------------------
+  # Same settings as notebook 04 (see its comments for why).
+  vp_list <- lapply(files, \(f) tryCatch(
+    calculate_vp(f, rcs = RADAR_RCS, h_layer = 200, n_layer = 20, dual_pol = TRUE),
+    error = function(e) NULL
+  ))
+  vp_list <- Filter(Negate(is.null), vp_list)
+
+  if (length(vp_list) < 2) {
+    message(tag, ": too few readable scans")
+    return(save_status("unreadable", length(files), raw_mb))
+  }
+
+  vpts <- bind_into_vpts(vp_list)
+
+  # --- 3. Save ----------------------------------------------------------------
+  # (a) The full altitude profiles, so we can revisit flight heights later
+  #     without re-downloading anything. Small (tens of KB per night).
+  saveRDS(vpts, prof_file)
+
+  # (b) Collapse altitudes and keep only scans between sunset and sunrise.
+  #     Daytime echoes are mostly insects.
+  vpi <- integrate_profile(vpts)
+  scans <- as.data.frame(vpi) |>
+    mutate(is_night = check_night(vpi)) |>
+    filter(is_night) |>
+    arrange(datetime)
+
+  if (nrow(scans) < 2) {
+    return(save_status("no night scans", length(files), raw_mb))
+  }
+
+  # (c) One summary row for the night.
+  #
+  # total_passage: birds crossing a 1 km line during the whole night. MTR is a
+  # RATE (birds per km per hour), so we multiply each scan's rate by the time
+  # until the next scan and add them up. Gaps longer than 1 hour (outages) are
+  # capped at 1 hour so a missing stretch doesn't inflate the total.
+  #
+  # mean_dd: average flight direction. Directions are circular (359° and 1°
+  # are neighbours), so we average them as compass vectors, weighted by MTR so
+  # busy scans count more than nearly empty ones.
+  hours_to_next <- as.numeric(difftime(lead(scans$datetime), scans$datetime, units = "hours"))
+  hours_to_next <- pmin(coalesce(hours_to_next, median(hours_to_next, na.rm = TRUE)), 1)
+
+  w <- coalesce(scans$mtr, 0)
+  rad <- scans$dd * pi / 180
+  ok <- !is.na(rad)
+  mean_dd <- (atan2(sum(w[ok] * sin(rad[ok])), sum(w[ok] * cos(rad[ok]))) * 180 / pi) %% 360
+
+  peak <- which.max(scans$mtr)
+
+  row <- tibble(
+    station, night, status = "ok",
+    n_scans         = nrow(scans),
+    n_files         = length(files),
+    raw_mb,
+    total_passage   = round(sum(scans$mtr * hours_to_next, na.rm = TRUE)),
+    peak_mtr        = round(scans$mtr[peak]),
+    peak_time_local = format(with_tz(scans$datetime[peak], "America/Los_Angeles"), "%H:%M"),
+    mean_mtr        = round(mean(scans$mtr, na.rm = TRUE)),
+    mean_vid        = round(mean(scans$vid, na.rm = TRUE), 1),
+    mean_ff         = round(mean(scans$ff,  na.rm = TRUE), 2),
+    mean_dd         = round(mean_dd) %% 360,   # so 359.7° shows as 0, not 360
+    minutes         = round(as.numeric(difftime(Sys.time(), t0, units = "mins")), 2)
+  )
+  write_csv(row, night_file)
+
+  # --- 4. Delete --------------------------------------------------------------
+  # Happens automatically via on.exit() above, as this function returns.
+  message(sprintf("%s: %d scans, %d MB raw, %.1f min, passage %s birds/km",
+                  tag, row$n_scans, raw_mb, row$minutes,
+                  format(row$total_passage, big.mark = ",")))
+  invisible(row)
+}
+```
+
+## Process the season
+
+```{r run}
+# Every station x every night. If one night errors unexpectedly, we log it
+# and keep going; a failed night has no result file, so a re-run retries it.
+jobs <- expand_grid(station = STATIONS, night = nights)
+
+t_start <- Sys.time()
+for (i in seq_len(nrow(jobs))) {
+  tryCatch(
+    process_night(jobs$station[i], jobs$night[i]),
+    error = function(e) message(jobs$station[i], " ", jobs$night[i],
+                                ": FAILED (", conditionMessage(e), "), will retry next run")
+  )
+}
+message("Session finished in ",
+        round(as.numeric(difftime(Sys.time(), t_start, units = "mins")), 1), " min")
+```
+
+## Combine
+
+```{r combine}
+# Gather every finished night into one table.
+nightly <- list.files(file.path(RADAR_OUT, "nights"), pattern = "\\.csv$",
+                      full.names = TRUE) |>
+  map_dfr(\(f) read_csv(f, show_col_types = FALSE,
+                        col_types = cols(night = col_date(),
+                                         peak_time_local = col_character())))
+
+write_csv(nightly, file.path(PATHS$derived,
+                             paste0("radar_", SEASON_LABEL, "_nightly.csv")))
+
+# Progress and "big data" bookkeeping for the report's methods section.
+nightly |>
+  group_by(station) |>
+  summarise(
+    nights_done     = n(),
+    nights_ok       = sum(status == "ok"),
+    scans_processed = sum(n_scans),
+    raw_gb          = round(sum(raw_mb) / 1000, 1),
+    hours_spent     = round(sum(minutes) / 60, 1),
+    .groups = "drop"
+  )
+```
+
+## Plot
+
+```{r plot, fig.width=10, fig.height=5}
+p <- nightly |>
+  filter(status == "ok") |>
+  ggplot(aes(night, total_passage)) +
+  geom_col(fill = "#1f6fb2", width = 0.9) +
+  facet_wrap(~ station, ncol = 1) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_date(date_labels = "%b %d") +
+  labs(
+    title = paste("Nightly", SEASON_LABEL, "migration over Southern California"),
+    subtitle = "Birds crossing a 1 km line per night (vol2bird, 11 cm² per bird)",
+    x = NULL, y = "Birds per km per night",
+    caption = "Data: NOAA NEXRAD Level II via AWS; processed with vol2bird / bioRad (Dokter et al. 2011)."
+  ) +
+  theme_minimal(base_size = 12)
+
+p
+ggsave(file.path(PATHS$figures, paste0("05_radar_", SEASON_LABEL, "_nightly.png")),
+       p, width = 10, height = 5, dpi = 200)
+```
+
+## Checks before trusting the season
+
+- **Direction:** most `ok` nights should have `mean_dd` roughly northward
+  (about 300–45°). Nights pointing south are worth a look: often rain the
+  filter missed, or insects.
+- **Gaps:** `no data` nights are station outages; note them in the report
+  rather than treating them as zero migration.
+- **Magnitude:** spot-check 3–4 busy nights against the BirdCast dashboard
+  for the same county and date.
+- **Timing:** the busiest weeks should overlap the peak weeks from notebook 02.
+  That overlap (or a mismatch) is one of the main results to discuss.

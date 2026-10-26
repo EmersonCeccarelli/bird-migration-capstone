@@ -1,0 +1,186 @@
+---
+title: "04 · Radar test night"
+subtitle: "How many birds flew over San Diego on one spring night?"
+format:
+  html:
+    toc: true
+execute:
+  warning: false
+  message: false
+---
+
+## Why radar, and why only one night first
+
+eBird (notebooks 02–03) tells us **which species** and **roughly where**.
+It can't count birds in the air. Weather radar can: NEXRAD stations scan
+the sky every 5–10 minutes, and at night during migration much of what they
+detect is birds. The vol2bird algorithm (Dokter et al. 2011) separates the
+bird signal from rain and turns it into a **vertical profile**: how dense
+the birds are at each altitude, and which way and how fast they're moving.
+
+Radar can't tell species apart, so the two sources complement each other:
+eBird says *who*, radar says *how many and when*.
+
+**This notebook processes ONE night at ONE station.**:
+
+- each scan is ~10–20 MB, so a full night at one station is ~1–2 GB;
+- processing is slow on a laptop (seconds per scan);
+- we want to confirm the method works and the numbers look sane before
+  scaling to more nights and stations.
+
+This is also the most 'big data' part of our project, so record the file
+counts, sizes and run time here. They go into the report's Database
+Management section.
+
+```{r setup}
+source(here::here("R", "config.R"))
+
+library(bioRad)     # NEXRAD download + profile tools (uses vol2birdR inside)
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(lubridate)
+```
+
+## Choose the night
+
+```{r params}
+# --- Edit these to pick a different station / night ---------------------
+station <- "KNKX"   # San Diego (see RADAR_STATIONS in config.R)
+
+# Radar files are timestamped in UTC. In late April San Diego is on PDT
+# (UTC−7), so the local night of Apr 27 runs from about 02:30 UTC to
+# 13:15 UTC on Apr 28. The NEXRAD archive covers any past date, so spring
+# nights are available even though we're working in the fall.
+#
+# FIRST RUN: keep this to a 2-hour window around the usual peak (roughly
+# 10 pm – midnight local = 05:00–07:00 UTC) so it finishes quickly.
+# ONCE IT WORKS: widen it to the full night, e.g. 01:00 to 14:00 UTC.
+date_min <- as.POSIXct("2026-04-28 05:00", tz = "UTC")
+date_max <- as.POSIXct("2026-04-28 07:00", tz = "UTC")
+
+# Pick a night with good migration: check the BirdCast Migration Dashboard
+# (https://dashboard.birdcast.info) for San Diego County and choose a night
+# with a big total. Avoid nights with rain at the station; vol2bird filters
+# rain, but heavy rain still degrades the estimates.
+# ---------------------------------------------------------------------------
+```
+
+## Step 1 · Download the raw scans from AWS
+
+```{r download}
+# NOAA publishes the full NEXRAD archive on AWS as open data (no account
+# needed). bioRad lists the files for this station and time window and
+# downloads them into data/raw/radar/YYYY/MM/DD/STATION/.
+# data/raw/ is git-ignored: these files are big and anyone can re-download
+# them, so they don't belong in the repo.
+t0 <- Sys.time()
+download_pvolfiles(
+  date_min  = date_min,
+  date_max  = date_max,
+  radar     = station,
+  directory = PATHS$radar
+)
+
+files <- list.files(PATHS$radar, pattern = paste0("^", station),
+                    recursive = TRUE, full.names = TRUE)
+# NEXRAD also publishes small "_MDM" metadata files alongside the scans;
+# they aren't radar volumes, so drop them.
+files <- files[!grepl("_MDM$", files)]
+
+# Big-data bookkeeping for the report.
+tibble(
+  scans    = length(files),
+  total_mb = round(sum(file.size(files)) / 1e6),
+  download_time = round(difftime(Sys.time(), t0, units = "mins"), 1)
+)
+```
+
+## Step 2 · Turn each scan into a vertical profile of birds
+
+```{r profiles}
+# calculate_vp() runs vol2bird on one scan. Key settings:
+#   rcs = 11 cm^2   radar cross-section per bird; converts reflectivity into
+#                   a NUMBER of birds (see RADAR_RCS in config.R)
+#   h_layer / n_layer: 20 layers of 200 m = 0–4 km above the radar, which
+#                   covers nearly all nocturnal songbird migration
+#   dual_pol = TRUE: uses NEXRAD's dual-polarization data to filter rain,
+#                   the main source of false "birds"
+# tryCatch() lets one corrupt scan be skipped instead of stopping the run.
+t0 <- Sys.time()
+vp_list <- lapply(files, \(f) tryCatch(
+  calculate_vp(f, rcs = RADAR_RCS, h_layer = 200, n_layer = 20,
+               dual_pol = TRUE),
+  error = function(e) { message("Skipped ", basename(f), ": ", conditionMessage(e)); NULL }
+))
+vp_list <- Filter(Negate(is.null), vp_list)
+
+message(length(vp_list), " of ", length(files), " scans processed in ",
+        round(difftime(Sys.time(), t0, units = "mins"), 1), " min")
+
+# Stack the individual profiles into one time series (a "vpts" object).
+vpts <- bind_into_vpts(vp_list)
+```
+
+## Step 3 · Collapse altitudes into nightly migration numbers
+
+```{r integrate}
+# integrate_profile() sums each profile over altitude and returns, per scan:
+#   vid  birds per km² in the air (density)
+#   mtr  migration traffic rate: birds crossing a 1 km line per hour
+#        (the standard "how much migration" number; BirdCast uses it too)
+#   ff   ground speed (m/s);  dd  direction of travel (degrees, 0 = north)
+vpi <- integrate_profile(vpts)
+
+radar_night <- as.data.frame(vpi) |>
+  mutate(
+    station,
+    local_time = with_tz(datetime, "America/Los_Angeles"),
+    # Keep only scans taken after sunset and before sunrise at the station.
+    # Daytime echoes are mostly insects and would inflate the numbers.
+    is_night = check_night(vpi)
+  ) |>
+  filter(is_night) |>
+  select(station, datetime, local_time, vid, mtr, ff, dd)
+
+# Derived summary, small and shareable (raw scans stay in data/raw/).
+write_csv(radar_night,
+          file.path(PATHS$derived,
+                    paste0("radar_", station, "_", format(date_min, "%Y%m%d"), ".csv")))
+
+summary(radar_night[, c("vid", "mtr", "ff", "dd")])
+```
+
+## Step 4 · Plot the night
+
+```{r plot, fig.width=8, fig.height=4.5}
+p <- ggplot(radar_night, aes(local_time, mtr)) +
+  geom_line() + geom_point(size = 1) +
+  labs(
+    title = paste0("Migration traffic over ", station, " (San Diego)"),
+    subtitle = format(date_min, "Night of %b %d, %Y (UTC start)"),
+    x = "Local time", y = "Birds crossing 1 km per hour (MTR)",
+    caption = "Data: NOAA NEXRAD Level II via AWS; processed with vol2bird / bioRad (Dokter et al. 2011)."
+  ) +
+  theme_minimal(base_size = 12)
+
+p
+ggsave(file.path(PATHS$figures, paste0("04_radar_", station, ".png")),
+       p, width = 8, height = 4.5, dpi = 200)
+```
+
+## Sanity checks before scaling up
+
+1. **Direction (`dd`):** on a good spring night, most birds should be
+   heading roughly north (dd around 315–45°, i.e. NW through NE). Mostly
+   southward headings suggest wind-drifted insects or a processing problem.
+2. **Magnitude:** compare our peak MTR with the BirdCast dashboard for San
+   Diego County on the same night. The units differ (BirdCast reports
+   county totals), but busy and quiet nights should line up.
+3. **Day-migrant check:** Rufous Hummingbird migrates by day, so it should
+   contribute nothing here. If a "night" scan shows big numbers right at
+   dusk or dawn, the night filter may need an `offset`.
+
+If all three look right, widen the time window to the full night and add
+more nights (e.g. weekly from mid-March to early June). Each night takes the same
+code: loop over a vector of dates.

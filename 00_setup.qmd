@@ -1,0 +1,88 @@
+---
+title: "00 · Setup"
+subtitle: "Run once per computer"
+execute:
+  eval: false   # run these chunks by hand; `quarto render` skips them
+---
+
+Run each chunk below **one at a time**. Re-running is
+safe: Step 1 skips anything already installed.
+
+## Step 1 · Install packages
+
+```{r}
+# Packages from CRAN, grouped by what they're for.
+cran_packages <- c(
+  "here", "remotes", "BiocManager",            # project tools
+  "ebirdst",                                   # eBird Status & Trends data
+  "terra", "sf", "maps",                       # spatial data
+  "dplyr", "tidyr", "readr", "purrr",          # data wrangling
+  "lubridate", "ggplot2", "gganimate", "gifski",
+  "rnaturalearthdata",                         # basemaps used by BirdFlowR
+  "vol2birdR", "bioRad"                        # weather radar
+)
+
+# Install only what's missing.
+missing <- setdiff(cran_packages, rownames(installed.packages()))
+if (length(missing) > 0) install.packages(missing)
+
+# rhdf5 reads BirdFlow model files. It comes from Bioconductor, not CRAN.
+if (!"rhdf5" %in% rownames(installed.packages())) {
+  BiocManager::install("rhdf5", update = FALSE, ask = FALSE)
+}
+
+# BirdFlowR isn't on CRAN yet, so we install it from GitHub.
+# If R asks about updating other packages, press Enter to skip.
+if (!"BirdFlowR" %in% rownames(installed.packages())) {
+  remotes::install_github("birdflow-science/BirdFlowR")
+}
+```
+
+If the BirdFlowR line fails with **"HTTP error 401 / Bad credentials"**, R is
+sending an old GitHub login. This installs it without one:
+
+```{r}
+tmp <- tempfile(fileext = ".tar.gz")
+download.file("https://codeload.github.com/birdflow-science/BirdFlowR/tar.gz/refs/heads/main",
+              tmp, mode = "wb")
+remotes::install_local(tmp)
+```
+
+## Step 2 · Save your eBird key
+
+Each user needs their **own** key from <https://ebird.org/st/request>.
+Never paste it into a file in this project.
+
+```{r}
+# Paste your key into the Console when asked. It's saved in a settings file
+# in your home folder (~/.Renviron), outside this project.
+ebirdst::set_ebirdst_access_key(readline("Paste your eBird key: "))
+```
+
+Then restart R: **Session → Restart R**.
+
+## Step 3 · Check everything works
+
+```{r}
+# 1. Is the key loaded? Should print TRUE (the key itself is never shown).
+nchar(Sys.getenv("EBIRDST_KEY")) > 0
+
+# 2. Are all packages installed? Should print character(0).
+needed <- c("ebirdst", "terra", "sf", "maps", "dplyr", "ggplot2",
+            "bioRad", "vol2birdR", "rhdf5", "BirdFlowR")
+setdiff(needed, rownames(installed.packages()))
+
+# 3. Which eBird data version? Should say 2023 (matches our citation).
+ebirdst::ebirdst_version()$status_version_year
+
+# 4. Test download: a small example dataset. Should print a raster with 52 layers.
+ebirdst::ebirdst_download_status("yebsap-example")
+ebirdst::load_raster("yebsap-example", resolution = "27km")
+
+# 5. Record your package versions so the team can compare if results differ.
+pkgs <- installed.packages()[needed, "Version"]
+readr::write_csv(data.frame(package = names(pkgs), version = pkgs),
+                 here::here("package_versions.csv"))
+```
+
+Move on to `01_species_check.qmd`.
