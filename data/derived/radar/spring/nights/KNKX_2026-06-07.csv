@@ -1,0 +1,2 @@
+station,night,status,n_scans,n_files,raw_mb,total_passage,peak_mtr,peak_time_local,mean_mtr,mean_vid,mean_ff,mean_dd,minutes
+KNKX,2026-06-07,ok,83,128,363,128,30,21:29,13,2.2,1.71,30,19.03

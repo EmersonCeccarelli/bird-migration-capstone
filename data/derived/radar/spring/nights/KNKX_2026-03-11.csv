@@ -1,0 +1,2 @@
+station,night,status,n_scans,n_files,raw_mb,total_passage,peak_mtr,peak_time_local,mean_mtr,mean_vid,mean_ff,mean_dd,minutes
+KNKX,2026-03-11,ok,106,130,872,6335,902,22:08,516,41.8,3.42,267,6.94

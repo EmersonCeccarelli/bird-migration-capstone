@@ -56,9 +56,7 @@ CANDIDATE_SPECIES <- c(
   "casvir",  # Cassin's Vireo         54% / 33%  Pacific Coast breeder
   "gocspa",  # Golden-crowned Sparrow 22% / 39%  migrating sparrow with fall strength
   "virwar",  # Virginia's Warbler     41% / 27%  interior Southwest
-  "rufhum"   # Rufous Hummingbird     23% / 25%  DAY migrant: should NOT appear
-             #                                   in night radar (a useful check);
-             #                                   textbook looped migrant
+  "rufhum"   # Rufous Hummingbird     23% / 25%
 )
 # Backups if one fails notebook 01: "calhum" (Calliope Hummingbird, 78% spring),
 # "gocspa" (Golden-crowned Sparrow, winters in coastal California).
