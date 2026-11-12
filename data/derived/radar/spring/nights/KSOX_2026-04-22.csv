@@ -1,0 +1,2 @@
+station,night,status,n_scans,n_files,raw_mb,total_passage,peak_mtr,peak_time_local,mean_mtr,mean_vid,mean_ff,mean_dd,minutes
+KSOX,2026-04-22,ok,92,134,689,1425,584,20:35,132,10.2,3.14,336,24.86

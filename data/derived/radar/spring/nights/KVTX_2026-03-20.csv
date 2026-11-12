@@ -1,0 +1,2 @@
+station,night,status,n_scans,n_files,raw_mb,total_passage,peak_mtr,peak_time_local,mean_mtr,mean_vid,mean_ff,mean_dd,minutes
+KVTX,2026-03-20,ok,79,99,312,1310,469,20:34,110,4.3,6.68,3,19.93
