@@ -32,6 +32,9 @@ renv/staging/
 _output/
 *_files/
 *.html
+# ...except the map page and its template, which belong in the repo
+!templates/*.html
+!figures/migration_map.html
 
 # --- OS clutter ----------------------------------------------------------------
 .DS_Store
