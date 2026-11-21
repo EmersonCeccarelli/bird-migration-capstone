@@ -1,0 +1,460 @@
+<!doctype html>
+<!--
+  Spring migration map: template.
+
+  Notebook 07 inserts the project's data into the "map-data" block below and saves
+  the finished page as figures/migration_map.html. Edit THIS file to change the
+  page's look or behaviour, then re-run notebook 07. Don't edit the generated
+  page; it is overwritten on every run.
+
+  Library: deck.gl (https://deck.gl), loaded from a CDN, pinned to one version
+  so the page can't break when deck.gl releases updates.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spring Migration Map</title>
+<script src="https://unpkg.com/deck.gl@9.2.11/dist.min.js"></script>
+<style>
+  :root {
+    /* Page: light, to match the project website. The MAP is always a night
+       sky (migration mostly happens after dark); its colours are set in the
+       map layers below. Species colours are the dark-surface palette,
+       checked for colour-blind separation and contrast against the map.
+       For a fully dark page, open it with ?theme=dark on the end of the URL
+       (or add class="night" to <body>). */
+    color-scheme: light;
+    --surface: #fcfcfb;   /* page background */
+    --panel:   #ffffff;   /* control panel */
+    --ocean:   #0d1524;   /* map: night-time water */
+    --ink:     #1f1f1c;   /* primary text */
+    --ink-2:   #5d5c55;   /* secondary text */
+    --rule:    #e4e3de;   /* borders, dividers */
+    --accent:  #2a78d6;   /* slider, focus, "tonight" marker */
+  }
+  body.night {
+    color-scheme: dark;
+    --surface: #0b1220; --panel: #111a2a; --ink: #e6ebf2;
+    --ink-2: #9aa7ba;   --rule: #223049;  --accent: #7fb2f0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--surface); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 32px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .lede { color: var(--ink-2); margin: 0 0 16px; max-width: 70ch; line-height: 1.45; }
+
+  .stage { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; }
+  #map {
+    position: relative; height: 640px; border: 1px solid var(--rule);
+    border-radius: 8px; overflow: hidden; background: var(--ocean);
+  }
+  .panel {
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 8px;
+    padding: 16px; display: flex; flex-direction: column; gap: 16px;
+  }
+  .panel h2 {
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--ink-2); margin: 0 0 8px; font-weight: 600;
+  }
+  .date { font-size: 1.75rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  button, select {
+    font: inherit; font-size: 0.875rem; border: 1px solid var(--rule); border-radius: 6px;
+    background: var(--panel); color: var(--ink); padding: 6px 12px; cursor: pointer;
+  }
+  button:hover, select:hover { border-color: var(--ink-2); }
+  button:focus-visible, select:focus-visible, input:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  #play { min-width: 84px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+
+  .spark { width: 100%; height: 64px; display: block; }
+  .stations { list-style: none; margin: 8px 0 0; padding: 0; font-size: 0.875rem; }
+  .stations li { display: flex; justify-content: space-between; padding: 2px 0; }
+  .stations .n { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .muted { color: var(--ink-2); font-size: 0.8125rem; line-height: 1.4; }
+
+  .species { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .species label {
+    display: grid; grid-template-columns: 16px 12px 1fr auto; gap: 8px;
+    align-items: center; font-size: 0.875rem; cursor: pointer; padding: 2px 0;
+  }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; }
+  .pct { color: var(--ink-2); font-variant-numeric: tabular-nums; font-size: 0.8125rem; }
+  input[type=checkbox] { accent-color: var(--ink-2); }
+  .tag {
+    font-size: 0.6875rem; color: var(--ink-2); border: 1px solid var(--rule);
+    border-radius: 4px; padding: 0 4px; margin-left: 6px; vertical-align: 1px;
+  }
+  .toggle { display: flex; gap: 8px; align-items: center; font-size: 0.875rem; cursor: pointer; }
+
+  footer { margin-top: 20px; color: var(--ink-2); font-size: 0.75rem; line-height: 1.5; max-width: 110ch; }
+  footer p { margin: 0 0 6px; }
+
+  /* Hover tooltip (deck.gl's built-in tooltip, restyled) */
+  .deck-tooltip {
+    font-family: inherit !important; font-size: 0.8125rem !important;
+    background: #e6ebf2 !important; color: #0b1220 !important;
+    border-radius: 6px !important; padding: 6px 8px !important; line-height: 1.4;
+  }
+
+  @media (max-width: 880px) {
+    .stage { grid-template-columns: 1fr; }
+    #map { height: 460px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Spring migration through the Pacific Flyway</h1>
+  <p class="lede">
+    Most songbirds migrate at night, out of sight. Each moving line is one
+    <strong>simulated</strong> bird, generated from a BirdFlow model of its species. Circles
+    over Southern California are weather radars: they grow with the number of birds the
+    radar detected aloft that night.
+  </p>
+
+  <div class="stage">
+    <div id="map" role="img" aria-label="Animated map of simulated spring migration routes for six western bird species, with nightly radar counts in Southern California"></div>
+
+    <aside class="panel" aria-label="Map controls">
+      <div>
+        <h2>Night of</h2>
+        <div class="date" id="date" aria-live="off">–</div>
+        <div class="controls" style="margin-top:8px">
+          <button id="play" aria-pressed="false">Play</button>
+          <label class="muted" for="speed">Speed</label>
+          <select id="speed">
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="2">2×</option>
+            <option value="4">4×</option>
+          </select>
+        </div>
+        <input id="slider" type="range" aria-label="Day of the season" style="margin-top:10px">
+      </div>
+
+      <div>
+        <h2>Radar, birds per km per night</h2>
+        <svg class="spark" id="spark" viewBox="0 0 260 64" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <ul class="stations" id="stations"></ul>
+        <p class="muted" style="margin:6px 0 0">Line: mean of the three radars across the season. Marker: tonight.</p>
+      </div>
+
+      <div>
+        <h2>Species (simulated routes)</h2>
+        <ul class="species" id="species"></ul>
+        <p class="muted" style="margin:6px 0 0">%: share of routes that pass through the study states (outlined).</p>
+      </div>
+
+      <div class="controls">
+        <label class="muted" for="per-species">Birds shown per species</label>
+        <select id="per-species">
+          <option value="25">25</option>
+          <option value="50" selected>50</option>
+          <option value="100">100</option>
+          <option value="100000">All</option>
+        </select>
+      </div>
+
+      <label class="toggle"><input type="checkbox" id="only-study"> Only routes through the study states</label>
+    </aside>
+  </div>
+
+  <footer id="credits"></footer>
+</div>
+
+<!-- Data inserted by notebook 07. -->
+<script id="map-data" type="application/json">__MAP_DATA__</script>
+
+<script>
+(() => {
+  if (new URLSearchParams(location.search).get('theme') === 'dark') document.body.classList.add('night');
+  const D = JSON.parse(document.getElementById('map-data').textContent);
+  const SP = D.species;          // [{code, name, color:[r,g,b], n_routes, pct_study}]
+  const TRIPS = D.trips;         // [{s: species index, x: 0/1 through study states, p: [[lon,lat],...], t: [day of year,...]}]
+  const RADAR = D.radar;         // {stations:[{code,label,lon,lat,offset}], doy0, pass:[[per-night values], ...one array per station]}
+  const START = D.time.start, END = D.time.end;   // day-of-year range of the animation
+  const DAYS_PER_SECOND = 3;     // animation speed at 1×
+  const TRAIL_DAYS = 10;         // how long a route's fading tail is
+  const ARC_BEND = 0.2;          // how strongly each weekly hop bows (0 = straight lines)
+
+  // ---- Arcing flight paths ---------------------------------------------------
+  // BirdFlow gives one position per week, so a route is a chain of weekly
+  // hops. We draw each hop as a gentle arc (a quadratic curve) that bows to
+  // the right of the direction of travel, i.e. inland for northbound birds.
+  // The bend scales with the hop's length: long jumps sweep, short ones barely
+  // curve. Timing is unchanged: each bird reaches each weekly position on the
+  // same day as in the data. Stopovers (staying put) remain pauses.
+  function arcTrip(trip) {
+    const P = trip.p, T = trip.t;
+    const p = [P[0]], t = [T[0]];
+    for (let i = 0; i < P.length - 1; i++) {
+      const a = P[i], b = P[i + 1];
+      const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy);
+      if (len === 0) { p.push(b); t.push(T[i + 1]); continue; }        // stopover
+      // Control point: the hop's midpoint, pushed sideways (to the right of travel).
+      const cx = (a[0] + b[0]) / 2 + dy * ARC_BEND;
+      const cy = (a[1] + b[1]) / 2 - dx * ARC_BEND;
+      const steps = Math.max(4, Math.min(16, Math.round(len * 2)));  // more points for longer hops
+      for (let k = 1; k <= steps; k++) {
+        const u = k / steps, w0 = (1 - u) * (1 - u), w1 = 2 * (1 - u) * u, w2 = u * u;
+        p.push([w0 * a[0] + w1 * cx + w2 * b[0], w0 * a[1] + w1 * cy + w2 * b[1]]);
+        t.push(T[i] + (T[i + 1] - T[i]) * u);
+      }
+    }
+    return { ...trip, p, t };
+  }
+
+  // Number each bird within its species (0, 1, 2, ...), so "show N birds per
+  // species" keeps the same birds every time. Routes are random draws, so the
+  // first N are a fair sample.
+  const seen = {};
+  for (let i = 0; i < TRIPS.length; i++) {
+    const r = seen[TRIPS[i].s] = (seen[TRIPS[i].s] ?? -1) + 1;
+    TRIPS[i] = { ...arcTrip(TRIPS[i]), r };
+  }
+
+  // ---- State ---------------------------------------------------------------
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let now = START;
+  let playing = !reduceMotion;   // autoplay unless the viewer prefers reduced motion
+  let speed = 1;
+  const visible = new Set(SP.map((_, i) => i));
+  let onlyStudy = false;
+  let perSpecies = 50;          // birds shown per species (display only)
+  let activeTrips = TRIPS;       // recomputed only when filters change (keeps animation smooth)
+
+  const fmtDate = d => new Date(Date.UTC(D.time.year, 0, Math.floor(d)))
+    .toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  const fmtNum = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+
+  // ---- Helpers ---------------------------------------------------------------
+  // Position of a simulated bird at time `time`, interpolated between its
+  // weekly route points. Returns null before departure / after arrival.
+  function headAt(trip, time) {
+    const t = trip.t;
+    if (time < t[0] || time > t[t.length - 1]) return null;
+    let i = 0;
+    while (i < t.length - 2 && t[i + 1] < time) i++;
+    const f = t[i + 1] > t[i] ? (time - t[i]) / (t[i + 1] - t[i]) : 0;
+    const a = trip.p[i], b = trip.p[i + 1];
+    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+  }
+
+  function refilter() {
+    activeTrips = TRIPS.filter(d => visible.has(d.s) && d.r < perSpecies && (!onlyStudy || d.x === 1));
+  }
+
+  // Radar value for station k on the night containing `time` (null if missing).
+  function radarValue(k, time) {
+    const v = RADAR.pass[k][Math.floor(time) - RADAR.doy0];
+    return v === undefined ? null : v;
+  }
+  const radarMax = Math.max(...RADAR.pass.flat().filter(v => v !== null));
+  // Circle radius in pixels: area grows with birds aloft (sqrt scaling).
+  const radarRadius = v => v === null ? 4 : 4 + 20 * Math.sqrt(v / radarMax);
+
+  // ---- Layers ----------------------------------------------------------------
+  function layers() {
+    const heads = [];
+    for (const d of activeTrips) {
+      const pos = headAt(d, now);
+      if (pos) heads.push({ pos, s: d.s });
+    }
+    const night = Math.floor(now);
+    // Additive blending: where trails overlap they brighten, like light. This
+    // gives the "glow" of a night map and shows busy corridors at a glance.
+    const GLOW = {
+      blend: true, blendColorOperation: 'add',
+      blendColorSrcFactor: 'src-alpha', blendColorDstFactor: 'one',
+      blendAlphaOperation: 'add', blendAlphaSrcFactor: 'one', blendAlphaDstFactor: 'one-minus-src-alpha',
+      depthWriteEnabled: false, depthCompare: 'always'
+    };
+    return [
+      new deck.GeoJsonLayer({
+        id: 'land', data: D.land, filled: true, stroked: true,
+        getFillColor: [28, 38, 55], getLineColor: [52, 66, 88], lineWidthMinPixels: 0.6
+      }),
+      new deck.GeoJsonLayer({
+        id: 'study', data: D.study, filled: true, stroked: true,
+        // A slightly lighter land tint with a pale outline marks the study states.
+        getFillColor: [255, 255, 255, 12], getLineColor: [120, 138, 165], lineWidthMinPixels: 1.2
+      }),
+      new deck.TripsLayer({
+        id: 'trips', data: activeTrips,
+        getPath: d => d.p, getTimestamps: d => d.t,
+        getColor: d => SP[d.s].color, opacity: 0.4,
+        getWidth: 1.25, widthUnits: 'pixels', jointRounded: true, capRounded: true,
+        fadeTrail: true, trailLength: TRAIL_DAYS, currentTime: now,
+        parameters: GLOW
+      }),
+      // Soft halo behind each bird (a larger, faint copy of the dot).
+      new deck.ScatterplotLayer({
+        id: 'halos', data: heads,
+        getPosition: d => d.pos, getFillColor: d => [...SP[d.s].color, 45],
+        stroked: false, radiusUnits: 'meters', getRadius: 27000,
+        radiusMinPixels: 5, radiusMaxPixels: 12, parameters: GLOW
+      }),
+      // Each bird's current position: a fine, slightly translucent point.
+      // Sized in metres (so dots grow a little as you zoom in) but clamped
+      // between 2.2 and 5 pixels so they stay crisp at every zoom.
+      new deck.ScatterplotLayer({
+        id: 'heads', data: heads, pickable: true,
+        getPosition: d => d.pos, getFillColor: d => [...SP[d.s].color, 245],
+        stroked: false, radiusUnits: 'meters', getRadius: 9000,
+        radiusMinPixels: 2.2, radiusMaxPixels: 5
+      }),
+      new deck.ScatterplotLayer({
+        id: 'radar', data: RADAR.stations, pickable: true,
+        getPosition: d => [d.lon, d.lat],
+        getRadius: (d, { index }) => radarRadius(radarValue(index, now)),
+        radiusUnits: 'pixels', getFillColor: [230, 236, 245, 30],
+        stroked: true, getLineColor: [230, 236, 245, 200], lineWidthMinPixels: 1.25,
+        updateTriggers: { getRadius: night }
+      }),
+      new deck.TextLayer({
+        id: 'radar-labels', data: RADAR.stations,
+        getPosition: d => [d.lon, d.lat], getText: d => d.code,
+        getPixelOffset: d => d.offset, getSize: 11, getColor: [230, 236, 245],
+        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif', fontWeight: 600,
+        getTextAnchor: d => (d.offset[0] < 0 ? 'end' : 'start'), getAlignmentBaseline: 'center',
+        background: true, getBackgroundColor: [11, 18, 32, 220], backgroundPadding: [3, 1]
+      })
+    ];
+  }
+
+  // ---- Map -------------------------------------------------------------------
+  const deckgl = new deck.DeckGL({
+    container: document.getElementById('map'),
+    views: new deck.MapView({ repeat: false }),
+    initialViewState: D.view,
+    controller: true,
+    pickingRadius: 6,              // small dots are still easy to hover
+
+    layers: layers(),
+    getTooltip: ({ object, layer }) => {
+      if (!object) return null;
+      if (layer.id === 'radar') {
+        const k = RADAR.stations.indexOf(object);
+        const v = radarValue(k, now);
+        return `${object.code}, ${object.label}\nNight of ${fmtDate(now)}: ` +
+               (v === null ? 'no data' : `${fmtNum.format(v)} birds/km`);
+      }
+      if (layer.id === 'heads') return `${SP[object.s].name}\n(simulated route)`;
+      return null;
+    }
+  });
+
+  // ---- Panel: species list ---------------------------------------------------
+  const spList = document.getElementById('species');
+  SP.forEach((sp, i) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<label><input type="checkbox" checked data-i="${i}">` +
+      `<span class="swatch" style="background:rgb(${sp.color.join(',')})"></span>` +
+      `<span>${sp.name}${sp.diurnal ? '<span class="tag" title="Migrates by day, so night radar does not count it">day</span>' : ''}</span>` +
+      `<span class="pct">${sp.pct_study}%</span></label>`;
+    spList.appendChild(li);
+  });
+  spList.addEventListener('change', e => {
+    const i = Number(e.target.dataset.i);
+    e.target.checked ? visible.add(i) : visible.delete(i);
+    refilter(); render();
+  });
+  document.getElementById('per-species').addEventListener('change', e => {
+    perSpecies = Number(e.target.value); refilter(); render();
+  });
+  document.getElementById('only-study').addEventListener('change', e => {
+    onlyStudy = e.target.checked; refilter(); render();
+  });
+
+  // ---- Panel: radar sparkline and readout -------------------------------------
+  const spark = document.getElementById('spark');
+  const W = 260, H = 64, PAD = 3;
+  const nNights = RADAR.pass[0].length;
+  const regional = Array.from({ length: nNights }, (_, j) => {
+    const vals = RADAR.pass.map(a => a[j]).filter(v => v !== null);
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  });
+  const regMax = Math.max(...regional.filter(v => v !== null));
+  const xOf = doy => ((doy - START) / (END - START)) * W;
+  const yOf = v => H - PAD - (v / regMax) * (H - 2 * PAD);
+  let path = '';
+  regional.forEach((v, j) => {
+    if (v === null) return;
+    path += (path ? 'L' : 'M') + xOf(RADAR.doy0 + j).toFixed(1) + ' ' + yOf(v).toFixed(1);
+  });
+  spark.innerHTML =
+    `<line x1="0" x2="${W}" y1="${H - PAD}" y2="${H - PAD}" style="stroke: var(--rule)" vector-effect="non-scaling-stroke"/>` +
+    `<path d="${path}" fill="none" style="stroke: var(--ink-2)" stroke-width="1.25" vector-effect="non-scaling-stroke"/>` +
+    `<line id="cursor" y1="0" y2="${H}" style="stroke: var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
+  const cursor = document.getElementById('cursor');
+
+  const stList = document.getElementById('stations');
+  RADAR.stations.forEach(st => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${st.code} · ${st.label}</span><span class="n" data-code="${st.code}">–</span>`;
+    stList.appendChild(li);
+  });
+  const stNums = [...stList.querySelectorAll('.n')];
+
+  // ---- Controls ----------------------------------------------------------------
+  const slider = document.getElementById('slider');
+  slider.min = START; slider.max = END; slider.step = 0.25; slider.value = now;
+  slider.addEventListener('input', () => { now = Number(slider.value); render(); });
+
+  const playBtn = document.getElementById('play');
+  function setPlaying(p) {
+    playing = p;
+    playBtn.textContent = p ? 'Pause' : 'Play';
+    playBtn.setAttribute('aria-pressed', String(p));
+  }
+  playBtn.addEventListener('click', () => setPlaying(!playing));
+  document.getElementById('speed').addEventListener('change', e => { speed = Number(e.target.value); });
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && !['INPUT', 'SELECT', 'BUTTON'].includes(document.activeElement.tagName)) {
+      e.preventDefault(); setPlaying(!playing);
+    }
+  });
+
+  // ---- Render loop -------------------------------------------------------------
+  function render() {
+    deckgl.setProps({ layers: layers() });
+    document.getElementById('date').textContent = fmtDate(now);
+    slider.value = now;
+    const x = xOf(now).toFixed(1);
+    cursor.setAttribute('x1', x); cursor.setAttribute('x2', x);
+    stNums.forEach((el, k) => {
+      const v = radarValue(k, now);
+      el.textContent = v === null ? '–' : fmtNum.format(v);
+    });
+  }
+
+  let last = performance.now();
+  function tick(t) {
+    const dt = Math.min((t - last) / 1000, 0.1);   // cap jumps after a background tab
+    last = t;
+    if (playing) {
+      now += dt * DAYS_PER_SECOND * speed;
+      if (now > END) now = START;                   // loop the season
+      render();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // ---- Credits -------------------------------------------------------------------
+  document.getElementById('credits').innerHTML = D.credits.map(c => `<p>${c}</p>`).join('');
+
+  refilter();
+  setPlaying(playing);
+  render();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
