@@ -1,0 +1,10 @@
+variable,importance,label
+station,0.028217700634569614,Radar station
+doy,0.688452053093351,Day of season
+tailwind,0.009729485700702376,Tailwind (along birds' heading)
+crosswind,0.030196035622943845,Crosswind
+temp,0.045594094841783485,Temperature
+temp_change,0.03326130149751352,Temperature change since last night
+pressure_change,0.003560351253688199,Pressure change since last night
+precip,0.055798924915030045,Overnight rain
+cloud,0.018472263408754342,Cloud cover

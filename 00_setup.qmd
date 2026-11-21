@@ -5,7 +5,7 @@ execute:
   eval: false   # run these chunks by hand; `quarto render` skips them
 ---
 
-Run each chunk below **one at a time**. Re-running is
+Run each chunk below **one at a time** (green ▶ on the chunk). Re-running is
 safe: Step 1 skips anything already installed.
 
 ## Step 1 · Install packages
@@ -19,7 +19,8 @@ cran_packages <- c(
   "dplyr", "tidyr", "readr", "purrr",          # data wrangling
   "lubridate", "ggplot2", "gganimate", "gifski",
   "rnaturalearthdata",                         # basemaps used by BirdFlowR
-  "vol2birdR", "bioRad"                        # weather radar
+  "vol2birdR", "bioRad",                       # weather radar
+  "ranger", "jsonlite"                         # migration models + weather API (06)
 )
 
 # Install only what's missing.
@@ -50,7 +51,7 @@ remotes::install_local(tmp)
 
 ## Step 2 · Save your eBird key
 
-Each user needs their **own** key from <https://ebird.org/st/request>.
+Each teammate needs their **own** key from <https://ebird.org/st/request>.
 Never paste it into a file in this project.
 
 ```{r}
@@ -85,4 +86,4 @@ readr::write_csv(data.frame(package = names(pkgs), version = pkgs),
                  here::here("package_versions.csv"))
 ```
 
-Move on to `01_species_check.qmd`.
+All five work? Move on to `01_species_check.qmd`.

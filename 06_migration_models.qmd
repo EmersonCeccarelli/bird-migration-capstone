@@ -1,0 +1,711 @@
+---
+title: "06 · Migration models"
+subtitle: "When does migration happen, and what drives it night to night?"
+format:
+  html:
+    toc: true
+execute:
+  warning: false
+  message: false
+---
+
+## What this notebook answers
+
+Notebooks 01–05 built the datasets. This notebook uses them to answer two of
+our research questions with models:
+
+1. **Timing.** Does the spring migration measured by radar over Southern
+   California line up with the movements of our six species, as measured by
+   eBird? Which species' timing matches the radar best?
+2. **Drivers.** What makes one night busy and the next quiet? We model nightly
+   migration from weather (wind, temperature, pressure, rain, cloud) and
+   season, following the approach of Van Doren & Horton (2018).
+
+**Inputs** (all created by earlier notebooks):
+
+- `data/derived/radar/spring/nights/*.csv`: one row per station per night (05)
+- `data/derived/radar/spring/profiles/*.rds`: radar profiles, used here only
+  for each station's coordinates (05)
+- `data/derived/weekly_population_share.csv`: weekly eBird shares (02)
+
+**New input:** hourly weather for each radar site from the Open-Meteo
+historical API (ERA5 reanalysis). It's free for non-commercial use with no
+key, licensed CC BY 4.0. We make **one request per station** for the whole
+season (3 requests in total), far below its limit of 10,000 requests per day,
+and save the results so later runs don't request them again.
+
+**Outputs:** `data/derived/weather/`, `data/derived/model_*.csv`, and figures
+`figures/06_*.png`.
+
+```{r setup}
+source(here::here("R", "config.R"))
+
+library(dplyr)
+library(tidyr)
+library(readr)
+library(purrr)
+library(ggplot2)
+library(lubridate)
+library(jsonlite)   # reads the weather API's JSON response
+library(ranger)     # random forest (fast, no tuning needed to start)
+library(splines)    # ns(): smooth seasonal curve for the linear models
+
+# Same season window as notebook 05.
+SEASON_START <- as.Date("2026-03-01")
+SEASON_END   <- as.Date("2026-06-15")
+RADAR_OUT    <- file.path(PATHS$derived, "radar", SEASON_LABEL)
+
+# Station colours: fixed order, validated for colour-blind separation
+# (blue, orange, aqua). Used consistently in every figure.
+STATION_COLS <- c(KNKX = "#2a78d6", KSOX = "#eb6834", KVTX = "#1baf7a")
+INK   <- "#1f1f1c"   # primary text
+QUIET <- "#6b6a63"   # secondary text, observed values
+
+theme_capstone <- theme_minimal(base_size = 12) +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(colour = "grey90", linewidth = 0.3),
+        plot.title.position = "plot",   # titles align with the left edge of the figure
+        plot.caption.position = "plot",
+        plot.title = element_text(face = "bold", colour = INK),
+        plot.subtitle = element_text(colour = QUIET),
+        plot.caption = element_text(colour = QUIET, size = 9))
+```
+
+## Load the radar season
+
+```{r load-radar}
+radar <- list.files(file.path(RADAR_OUT, "nights"), pattern = "\\.csv$",
+                    full.names = TRUE) |>
+  map_dfr(\(f) read_csv(f, show_col_types = FALSE,
+                        col_types = cols(night = col_date(),
+                                         peak_time_local = col_character()))) |>
+  filter(night >= SEASON_START, night <= SEASON_END)
+
+# Data inventory for the report: nights per station and their status.
+count(radar, station, status)
+
+radar_ok <- radar |>
+  filter(status == "ok") |>
+  # Flag nights whose average heading isn't roughly northward (NW to NE).
+  # We KEEP them in the models (they're real nights), but report how many,
+  # since they may contain rain or insects the filter missed.
+  mutate(northward = mean_dd >= 270 | mean_dd <= 90)
+
+count(radar_ok, station, northward)
+```
+
+# Part 1 · Timing: radar vs species
+
+## Making the two datasets comparable
+
+Radar and eBird measure different things:
+
+- **Radar measures movement:** birds flying over the station each night.
+- **eBird measures presence:** the share of a species' population that is in
+  California in a given week.
+
+A species that arrives in April and stays all summer shows high presence in
+June, but little movement then. So comparing radar to eBird presence would be
+comparing a flow to a stock. To compare like with like, we turn eBird presence
+into **movement**: the *size* of the week-to-week change in the share of each
+species' population in California, whether up or down.
+
+- An **increase** means birds arrived that week (e.g. Western Tanager coming
+  north to breed).
+- A **decrease** means birds left that week (e.g. Golden-crowned Sparrow,
+  which winters in California and departs north in spring).
+
+Both are birds on the move, flying over our radars, so we count both. Using
+only increases would make a wintering species like Golden-crowned Sparrow look
+as if it never migrated at all.
+
+eBird dates describe a *typical* year, so we match the two datasets by day of
+year, not calendar date. (2023 and 2026 are both non-leap years, so the days
+line up exactly.)
+
+```{r load-ebird}
+ebird <- read_csv(file.path(PATHS$derived, "weekly_population_share.csv"),
+                  show_col_types = FALSE) |>
+  # California is the eBird area that contains all three radars.
+  filter(area == tools::toTitleCase(FOCUS_STATE)) |>
+  mutate(doy = yday(week_date)) |>
+  arrange(species_code, doy) |>
+  group_by(species_code, common_name) |>
+  # Movement = size of the change in share since last week. Arrivals
+  # (increases) and departures (decreases) both count.
+  mutate(movement = abs(share - lag(share))) |>
+  ungroup()
+
+# The eBird week each day of the year belongs to (nearest week date).
+ebird_weeks <- sort(unique(ebird$doy))
+nearest_week <- function(doy) map_dbl(doy, \(d) ebird_weeks[which.min(abs(ebird_weeks - d))])
+
+season_doy <- yday(c(SEASON_START, SEASON_END))
+```
+
+## Timing of each series: 10%, 50% and 90% points
+
+A standard way to describe migration timing (phenology) is the date by which
+10%, 50% and 90% of the season's total has happened. The 50% date is the
+"midpoint" of migration; 10–90% is its core window. We compute these for each
+radar station (from nightly passage) and each species (from weekly movement),
+over the same March 1 – June 15 window.
+
+```{r timing}
+#' Day of year when 10%, 50% and 90% of the total weight has accumulated.
+timing_points <- function(doy, weight) {
+  o  <- order(doy)
+  w  <- pmax(coalesce(weight[o], 0), 0)
+  cw <- cumsum(w) / sum(w)
+  d  <- doy[o]
+  tibble(q10 = d[which(cw >= 0.10)[1]],
+         q50 = d[which(cw >= 0.50)[1]],
+         q90 = d[which(cw >= 0.90)[1]])
+}
+
+timing_radar <- radar_ok |>
+  group_by(series = station) |>
+  reframe(timing_points(yday(night), total_passage)) |>
+  mutate(group = "Radar station (birds passing)")
+
+timing_species <- ebird |>
+  filter(between(doy, season_doy[1], season_doy[2])) |>
+  group_by(series = common_name) |>
+  reframe(timing_points(doy, movement)) |>
+  mutate(group = "Species (eBird movement in/out of California)")
+
+doy_to_date <- function(d) as.Date(d - 1, origin = paste0(year(SEASON_START), "-01-01"))
+
+timing <- bind_rows(timing_radar, timing_species) |>
+  mutate(across(c(q10, q50, q90), doy_to_date, .names = "{.col}_date"))
+
+write_csv(timing, file.path(PATHS$derived, "model_timing.csv"))
+timing |> select(group, series, q10_date, q50_date, q90_date) |> arrange(q50_date)
+```
+
+```{r timing-plot, fig.width=9, fig.height=5}
+p_timing <- timing |>
+  mutate(series = reorder(series, q50)) |>
+  ggplot(aes(y = series, colour = group)) +
+  geom_segment(aes(x = q10_date, xend = q90_date, yend = series), linewidth = 2, alpha = 0.35,
+               lineend = "round") +
+  geom_point(aes(x = q50_date), size = 3) +
+  scale_colour_manual(values = c("#2a78d6", "#eb6834"), name = NULL) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "2 weeks") +
+  labs(
+    title = "When spring migration happens over Southern California",
+    subtitle = "Dot = date by which half the season's movement had happened; bar = 10% to 90% of it",
+    x = NULL, y = NULL,
+    caption = paste(FIGURE_CAPTION, "Radar: NOAA NEXRAD via vol2bird (Dokter et al. 2011).")
+  ) +
+  theme_capstone +
+  theme(legend.position = "top", legend.justification = "left")
+
+p_timing
+ggsave(file.path(PATHS$figures, "06_timing.png"), p_timing, width = 9, height = 5, dpi = 200)
+```
+
+## Which species' timing tracks the radar?
+
+We correlate the weekly radar signal with each species' weekly movement.
+Stations differ in how many birds they see, so we first scale each station to
+its own season total (each becomes "share of the season's passage per week")
+and average the three into one regional index.
+
+We also test **lags** of up to 3 weeks either way. eBird's weekly maps are
+smoothed estimates, so a species' movement can show up a week or two before or
+after the radar sees the matching pulse. If the best match is two weeks
+*later* than the radar, eBird is registering the change after the birds have
+already flown over. That's the kind of insight a lag reveals.
+
+We use **Spearman correlation** (rank-based), because it measures whether busy
+weeks coincide without assuming a straight-line relationship.
+
+```{r lag-correlation}
+radar_week <- radar_ok |>
+  mutate(doy = nearest_week(yday(night))) |>
+  group_by(station, doy) |>
+  summarise(passage = mean(total_passage), .groups = "drop") |>   # mean per night
+  group_by(station) |>
+  mutate(share_of_season = passage / sum(passage)) |>
+  group_by(doy) |>
+  summarise(radar_index = mean(share_of_season), .groups = "drop") |>
+  mutate(week_i = match(doy, ebird_weeks))
+
+species_week <- ebird |>
+  filter(between(doy, season_doy[1], season_doy[2])) |>
+  mutate(week_i = match(doy, ebird_weeks)) |>
+  select(species_code, common_name, week_i, movement)
+
+#' Spearman correlation between radar and a species, with the species
+#' shifted by `lag` weeks. lag > 0: eBird movement comes `lag` weeks AFTER
+#' the radar passage it correlates with.
+lag_cor <- function(sp, lag) {
+  s <- species_week |> filter(species_code == sp) |> mutate(week_i = week_i - lag)
+  j <- inner_join(radar_week, s, by = "week_i")
+  tibble(lag_weeks = lag, n_weeks = nrow(j),
+         spearman = cor(j$radar_index, j$movement, method = "spearman"))
+}
+
+lags <- species_week |>
+  distinct(species_code, common_name) |>
+  mutate(res = map(species_code, \(sp) map_dfr(-3:3, \(L) lag_cor(sp, L)))) |>
+  unnest(res)
+
+lag_summary <- lags |>
+  group_by(common_name) |>
+  summarise(
+    r_same_week  = spearman[lag_weeks == 0],
+    best_lag     = lag_weeks[which.max(spearman)],
+    r_best_lag   = max(spearman),
+    .groups = "drop"
+  ) |>
+  arrange(desc(r_best_lag))
+
+write_csv(lags, file.path(PATHS$derived, "model_timing_lags.csv"))
+lag_summary
+```
+
+**How to read this:**
+
+- **High `r_same_week`** (above about 0.6): the species moves in or out of
+  California in the same weeks the radars see heavy migration.
+- **`best_lag` above 0:** eBird registers the movement *after* the radar
+  peak, consistent with birds passing over first and being counted later
+  (or farther north). **Below 0:** eBird's change comes first, e.g. a species
+  moving before the main songbird pulse.
+- **A best lag at the edge (±3)** usually means there's no clean match; the
+  correlation keeps rising only because the series are being slid apart. Treat
+  those as "no clear alignment" rather than a 3-week lag.
+- **Rufous Hummingbird is a built-in check.** It migrates by day, and the
+  radar only measures night, so a weak correlation for it is what we'd expect.
+  A strong one would suggest the shared seasonal timing, not the species
+  itself, drives the match.
+- With ~15 weeks of data, correlations are rough. Report them as evidence of
+  alignment, not proof that these species make up the radar signal: the radar
+  sees *every* night migrant, not just our six.
+
+# Part 2 · Drivers: modelling nightly migration from weather
+
+## Weather for each radar site
+
+```{r station-coords}
+# Each radar's coordinates, read from a saved profile (05) rather than typed
+# by hand, so they're exactly what vol2bird used.
+coords <- map_dfr(RADAR_STATIONS, \(s) {
+  f <- list.files(file.path(RADAR_OUT, "profiles"), pattern = paste0("^", s, "_"),
+                  full.names = TRUE)[1]
+  v <- readRDS(f)
+  tibble(station = s, lat = v$attributes$where$lat, lon = v$attributes$where$lon)
+})
+coords
+```
+
+```{r get-weather}
+WEATHER_DIR <- file.path(PATHS$derived, "weather")
+dir.create(WEATHER_DIR, showWarnings = FALSE)
+
+#' Hourly weather for one station for the whole season, cached to CSV.
+#'
+#' Variables (ERA5 reanalysis via Open-Meteo):
+#'   temperature_2m (°C), surface_pressure (hPa), precipitation (mm/hour),
+#'   cloud_cover (%), wind at 100 m: speed (m/s) and direction (degrees,
+#'   the direction the wind blows FROM).
+#' timezone = America/Los_Angeles makes the hours local, so "21:00" means
+#' 9 pm in San Diego. We keep `time` as text to avoid time-zone conversions
+#' when saving and re-reading the cache.
+get_weather <- function(station, lat, lon) {
+  cache <- file.path(WEATHER_DIR, paste0(station, "_", SEASON_LABEL, ".csv"))
+  if (!file.exists(cache)) {
+    url <- paste0(
+      "https://archive-api.open-meteo.com/v1/archive",
+      "?latitude=", lat, "&longitude=", lon,
+      "&start_date=", SEASON_START - 1, "&end_date=", SEASON_END + 1,
+      "&hourly=temperature_2m,surface_pressure,precipitation,cloud_cover,",
+      "wind_speed_100m,wind_direction_100m",
+      "&wind_speed_unit=ms&timezone=America%2FLos_Angeles"
+    )
+    hourly <- as_tibble(fromJSON(url)$hourly) |> mutate(station = station)
+    write_csv(hourly, cache)
+    Sys.sleep(1)   # polite pause between requests (not required by the limits)
+  }
+  read_csv(cache, show_col_types = FALSE, col_types = cols(time = col_character()))
+}
+
+weather_hourly <- pmap_dfr(coords, get_weather)
+```
+
+## From hourly weather to one row per night
+
+Birds decide whether to migrate around dusk, so we describe each night by
+conditions at **9 pm local** (shortly after sunset through the season), plus
+the **change since 9 pm the night before**, which captures weather fronts.
+
+- **Wind relative to the birds' heading.** What matters to a migrant is how
+  much the wind pushes it along its route. The radar tells us that route: our
+  birds head **northwest** along the coast, not due north. So we split the
+  wind into two components relative to that heading:
+  - `tailwind`: wind blowing *along* the birds' heading (positive = helping,
+    negative = headwind)
+  - `crosswind`: wind blowing *across* it (positive = pushing birds to the
+    right of their heading, i.e. inland/northeast)
+
+  Components also solve a technical problem: wind direction is circular (359°
+  is next to 1°), which models can't use directly.
+
+  *Why this matters:* a first version of this notebook measured tailwind
+  toward due north and found no tailwind effect at all, while the east–west
+  wind had a strong one. That was the northwest tailwind being split across
+  the wrong axes. Measuring wind along the radar-observed heading fixes it.
+- **Rain** is summed over the night (6 pm to 6 am), because rain at any point
+  grounds birds.
+- Wind is taken at **100 m**, the highest level this source provides. Most
+  migrants fly higher (often 200–1,500 m), so this is an approximation; see
+  the limitations at the end.
+
+```{r weather-nightly}
+weather_nightly <- weather_hourly |>
+  mutate(
+    date = as.Date(substr(time, 1, 10)),
+    hour = as.integer(substr(time, 12, 13)),
+    # Meteorological direction is where wind comes FROM, hence the minus signs.
+    u = -wind_speed_100m * sin(wind_direction_100m * pi / 180),
+    v = -wind_speed_100m * cos(wind_direction_100m * pi / 180)
+  )
+
+evening <- weather_nightly |>
+  filter(hour == 21) |>
+  transmute(station, night = date, temp = temperature_2m,
+            pressure = surface_pressure, cloud = cloud_cover,
+            wind_speed = wind_speed_100m, u, v) |>
+  arrange(station, night) |>
+  group_by(station) |>
+  mutate(
+    # Only compute a change when yesterday exists (guards against gaps).
+    consecutive     = as.numeric(night - lag(night)) == 1,
+    temp_change     = if_else(consecutive, temp - lag(temp), NA_real_),
+    pressure_change = if_else(consecutive, pressure - lag(pressure), NA_real_)
+  ) |>
+  ungroup() |>
+  select(-consecutive)
+
+overnight_rain <- weather_nightly |>
+  mutate(night = case_when(hour >= 18 ~ date, hour < 6 ~ date - 1)) |>
+  filter(!is.na(night)) |>
+  group_by(station, night) |>
+  summarise(precip = sum(precipitation, na.rm = TRUE), .groups = "drop")
+
+# The birds' typical heading this spring, measured by the radar: the circular
+# mean of nightly headings on northward nights, weighted by passage so busy
+# nights count more. One heading for the season (not per night), so the
+# predictor stays a property of the weather, not of that night's birds.
+HEADING <- radar_ok |>
+  filter(northward) |>
+  summarise(h = (atan2(sum(total_passage * sin(mean_dd * pi / 180)),
+                       sum(total_passage * cos(mean_dd * pi / 180))) * 180 / pi) %% 360) |>
+  pull(h)
+cat("Seasonal mean heading:", round(HEADING), "degrees (0 = north, 315 = northwest)\n")
+
+h <- HEADING * pi / 180
+weather_features <- evening |>
+  left_join(overnight_rain, by = c("station", "night")) |>
+  mutate(
+    # Project the wind vector (u, v) onto the heading and onto the
+    # direction 90° to its right.
+    tailwind  = u * sin(h) + v * cos(h),
+    crosswind = u * cos(h) - v * sin(h)
+  )
+
+write_csv(weather_features, file.path(WEATHER_DIR, paste0("nightly_features_", SEASON_LABEL, ".csv")))
+summary(weather_features)
+```
+
+## The modelling dataset
+
+The response is **log10 of total nightly passage**. Nightly migration varies
+over orders of magnitude (from a few hundred to 70,000 birds per km), and
+weather affects it multiplicatively (a tailwind might *double* traffic), so
+the log scale fits the problem. A model error of 0.3 on this scale means
+predictions are typically within a factor of 10^0.3 ≈ 2 of the truth.
+
+```{r model-data}
+model_df <- radar_ok |>
+  select(station, night, total_passage) |>
+  inner_join(weather_features, by = c("station", "night")) |>
+  mutate(
+    y       = log10(total_passage + 1),
+    doy     = yday(night),
+    station = factor(station, levels = names(STATION_COLS)),
+    # Cross-validation folds = calendar weeks of the season (see below).
+    fold    = floor((doy - min(doy)) / 7)
+  ) |>
+  drop_na(y, temp, pressure, cloud, tailwind, crosswind, temp_change,
+          pressure_change, precip)
+
+nrow(model_df)
+count(model_df, station)
+```
+
+## Three models, from simple to flexible
+
+| Model | Predictors | Question it answers |
+|---|---|---|
+| **Season only** (linear) | station + smooth curve of day of year | How much does the calendar alone explain? (the baseline) |
+| **Season + weather** (linear) | the above + wind, temperature, pressure, rain, cloud | How much does weather add, with easy-to-read effects? |
+| **Random forest** | same predictors | Does a flexible model, which can capture thresholds and interactions (e.g. tailwinds matter only when it's dry), do better? |
+
+The season curve uses a natural spline (`ns(doy, df = 4)`): a smooth curve
+that bends to fit the rise and fall of the season without the wild swings a
+high-degree polynomial can make at the season's edges.
+
+**Validation: leave one week out.** Nights next to each other are similar
+(migration and weather come in multi-night spells), so a random train/test
+split would leak information: the model would be tested on nights whose
+neighbours it trained on. Instead, we hold out **one whole week at a time**,
+train on the rest, predict the held-out week, and repeat for every week. Every
+prediction is made by a model that never saw that week.
+
+```{r cross-validation}
+f_season  <- y ~ station + ns(doy, df = 4)
+f_weather <- y ~ station + ns(doy, df = 4) + tailwind + crosswind + temp + temp_change +
+                 pressure_change + precip + cloud
+rf_vars   <- c("station", "doy", "tailwind", "crosswind", "temp", "temp_change",
+               "pressure_change", "precip", "cloud")
+
+#' Leave-one-week-out predictions for a model-fitting function.
+#' `fit_predict(train, test)` must return predictions for `test`.
+cv_predict <- function(fit_predict) {
+  map_dfr(sort(unique(model_df$fold)), \(k) {
+    train <- filter(model_df, fold != k)
+    test  <- filter(model_df, fold == k)
+    mutate(test, pred = fit_predict(train, test))
+  })
+}
+
+cv_season  <- cv_predict(\(tr, te) predict(lm(f_season,  data = tr), newdata = te))
+cv_weather <- cv_predict(\(tr, te) predict(lm(f_weather, data = tr), newdata = te))
+cv_rf      <- cv_predict(\(tr, te) {
+  fit <- ranger(y ~ ., data = tr[, c("y", rf_vars)], num.trees = 500,
+                seed = RANDOM_SEED)
+  predict(fit, data = te)$predictions
+})
+
+score <- function(d, model) {
+  tibble(
+    model,
+    rmse_log10   = sqrt(mean((d$y - d$pred)^2)),
+    # Typical error as a factor: 2 means "usually within 2x of the truth".
+    error_factor = 10^rmse_log10,
+    # Share of night-to-night variation explained on held-out weeks.
+    r2           = 1 - sum((d$y - d$pred)^2) / sum((d$y - mean(d$y))^2)
+  )
+}
+
+model_scores <- bind_rows(
+  score(cv_season,  "Season only"),
+  score(cv_weather, "Season + weather (linear)"),
+  score(cv_rf,      "Random forest")
+)
+write_csv(model_scores, file.path(PATHS$derived, "model_scores.csv"))
+model_scores
+```
+
+**How to read the scores:** the key number is how much **R²** rises from
+"Season only" to the weather models. That gain is the share of night-to-night
+variation explained by weather beyond the calendar. Van Doren & Horton (2018)
+found weather and season together explained most of the variation in nightly
+migration across the US, so a clear gain here is the expected, citable result.
+
+## What the linear model says about each weather factor
+
+```{r linear-effects}
+fit_weather <- lm(f_weather, data = model_df)
+
+# Effects as % change in passage per unit change in the predictor, holding
+# the others fixed: a coefficient b on the log10 scale = (10^b - 1) * 100 %.
+broom_like <- summary(fit_weather)$coefficients |>
+  as.data.frame() |>
+  tibble::rownames_to_column("term") |>
+  filter(term %in% c("tailwind", "crosswind", "temp", "temp_change", "pressure_change",
+                     "precip", "cloud")) |>
+  transmute(
+    term,
+    unit = c(tailwind = "per m/s tailwind (along heading)",
+             crosswind = "per m/s crosswind (toward inland side)",
+             temp = "per °C", temp_change = "per °C warmer than last night",
+             pressure_change = "per hPa rise since last night",
+             precip = "per mm overnight rain", cloud = "per % cloud")[term],
+    pct_change = round((10^Estimate - 1) * 100, 1),
+    p_value    = signif(`Pr(>|t|)`, 2)
+  )
+broom_like
+```
+
+Each row reads like "each extra 1 m/s of tailwind is associated with about
+X% more birds aloft, all else equal." Treat effects with p-values above 0.05
+as unclear rather than as "no effect"; a single season gives limited power.
+
+## Random forest: which factors matter most
+
+```{r importance, fig.width=8, fig.height=4.5}
+rf_full <- ranger(y ~ ., data = model_df[, c("y", rf_vars)], num.trees = 500,
+                  importance = "permutation", seed = RANDOM_SEED)
+
+# Permutation importance: how much worse the model gets when one predictor's
+# values are randomly shuffled (breaking its link to migration).
+var_labels <- c(doy = "Day of season", tailwind = "Tailwind (along birds' heading)",
+                crosswind = "Crosswind", temp = "Temperature",
+                temp_change = "Temperature change since last night",
+                pressure_change = "Pressure change since last night",
+                precip = "Overnight rain", cloud = "Cloud cover",
+                station = "Radar station")
+
+importance_df <- tibble(variable = names(rf_full$variable.importance),
+                        importance = unname(rf_full$variable.importance)) |>
+  mutate(label = reorder(var_labels[variable], importance))
+write_csv(importance_df, file.path(PATHS$derived, "model_importance.csv"))
+
+p_importance <- ggplot(importance_df, aes(importance, label)) +
+  geom_col(fill = "#2a78d6", width = 0.6) +
+  labs(title = "What predicts a busy migration night",
+       subtitle = "Random forest: how much the model relies on each factor",
+       x = "Increase in prediction error when the factor is shuffled", y = NULL,
+       caption = "Radar: NOAA NEXRAD via vol2bird. Weather: Open-Meteo (ERA5), CC BY 4.0.") +
+  theme_capstone +
+  theme(panel.grid.major.y = element_blank())
+
+p_importance
+ggsave(file.path(PATHS$figures, "06_importance.png"), p_importance, width = 8, height = 4.5, dpi = 200)
+```
+
+## How tailwind changes migration
+
+The linear model estimates tailwind's effect with the other weather held
+fixed. We show it as a **multiplier relative to a calm night** (no tailwind
+or headwind), with a 95% confidence band.
+
+We use the linear model here, not the random forest: the forest's version of
+this curve is flat, because the tailwind effect only appears once
+temperature is held fixed exactly (tailwind nights tend to be slightly
+cooler, which offsets their boost). The check below shows this.
+
+```{r tailwind-checks}
+#' Tailwind effect (% per m/s) and p-value from a linear model.
+tw_effect <- function(f, d = model_df) {
+  b <- coef(summary(lm(f, data = d)))["tailwind", ]
+  round(c(pct_per_ms = (10^b[["Estimate"]] - 1) * 100, p = b[["Pr(>|t|)"]]), 4)
+}
+
+# 1. Suppression: tailwind with season only vs with all weather.
+#    A clearly larger effect in the full model means other weather (mainly
+#    temperature) was masking it.
+tw_effect(y ~ station + ns(doy, df = 4) + tailwind)
+tw_effect(f_weather)
+
+# 2. Robustness: range of the effect with each week left out in turn.
+#    Positive throughout = no single week drives the result.
+round(range(sapply(unique(model_df$fold), \(k)
+  tw_effect(f_weather, filter(model_df, fold != k))[["pct_per_ms"]])), 1)
+```
+
+```{r tailwind-effect, fig.width=7, fig.height=4.5}
+b  <- coef(fit_weather)[["tailwind"]]               # log10 effect per m/s
+se <- sqrt(vcov(fit_weather)["tailwind", "tailwind"])
+
+tw_grid <- seq(quantile(model_df$tailwind, 0.05), quantile(model_df$tailwind, 0.95),
+               length.out = 50)
+
+# Multiplier vs a calm night: 10^(b × tailwind). The band uses b ± 1.96 SE;
+# pmin/pmax keep low and high the right way round on the headwind side.
+tailwind_effect <- tibble(
+  tailwind = tw_grid,
+  ratio    = 10^(b * tw_grid),
+  lo       = pmin(10^((b - 1.96 * se) * tw_grid), 10^((b + 1.96 * se) * tw_grid)),
+  hi       = pmax(10^((b - 1.96 * se) * tw_grid), 10^((b + 1.96 * se) * tw_grid))
+)
+write_csv(tailwind_effect, file.path(PATHS$derived, "model_tailwind_effect.csv"))
+
+p_tailwind <- ggplot(tailwind_effect, aes(tailwind, ratio)) +
+  geom_hline(yintercept = 1, colour = "grey70", linewidth = 0.3) +
+  geom_vline(xintercept = 0, colour = "grey70", linewidth = 0.3) +
+  geom_ribbon(aes(ymin = lo, ymax = hi), fill = "#2a78d6", alpha = 0.15) +
+  geom_line(colour = "#2a78d6", linewidth = 1) +
+  scale_y_continuous(labels = \(x) paste0(x, "×")) +
+  labs(title = "Tailwinds bring more birds aloft",
+       subtitle = "Birds aloft relative to a calm night, other weather held fixed (linear model, 95% CI)",
+       x = paste0("Tailwind at 100 m along the birds' ", round(HEADING),
+                  "° heading (m/s); negative = headwind"),
+       y = "Birds aloft vs a calm night",
+       caption = "Radar: NOAA NEXRAD via vol2bird. Weather: Open-Meteo (ERA5), CC BY 4.0.") +
+  theme_capstone
+
+p_tailwind
+ggsave(file.path(PATHS$figures, "06_tailwind_effect.png"), p_tailwind,
+       width = 7, height = 4.5, dpi = 200)
+```
+
+## Observed vs predicted, night by night
+
+```{r observed-vs-predicted, fig.width=10, fig.height=6}
+p_obs <- cv_rf |>
+  ggplot(aes(night)) +
+  geom_point(aes(y = 10^y, colour = "Observed (radar)"), size = 1.2) +
+  geom_line(aes(y = 10^pred, colour = "Predicted (random forest, held-out week)"),
+            linewidth = 0.7) +
+  facet_wrap(~ station, ncol = 1) +
+  scale_y_log10(labels = scales::comma) +
+  scale_colour_manual(values = c("Observed (radar)" = QUIET,
+                                 "Predicted (random forest, held-out week)" = "#2a78d6"),
+                      name = NULL) +
+  # Legend keys: a dot for observed, a line for predicted (not both on each).
+  guides(colour = guide_legend(override.aes = list(linetype = c(0, 1),
+                                                   shape = c(16, NA)))) +
+  scale_x_date(date_labels = "%b %d") +
+  labs(title = "Nightly spring migration: observed vs predicted",
+       subtitle = "Every prediction comes from a model that never saw that week",
+       x = NULL, y = "Birds per km per night (log scale)") +
+  theme_capstone +
+  theme(legend.position = "top", legend.justification = "left")
+
+p_obs
+ggsave(file.path(PATHS$figures, "06_observed_vs_predicted.png"), p_obs, width = 10, height = 6, dpi = 200)
+```
+
+Where the line misses big spikes, look at those nights: are they the
+non-northward nights flagged at the start (possible rain or insects), or real
+mass-migration nights the model can't anticipate from 9 pm weather alone?
+
+## Limitations to carry into the report
+
+- **Weather height.** Wind is at 100 m, while most migrants fly higher. A
+  next step is pressure-level winds (e.g. 925 hPa, about 750 m), or using the
+  radar's own altitude profiles to weight winds by where birds actually fly.
+- **One heading for the season.** Tailwind is measured along the
+  season-average heading from the radar. Individual nights (and species) vary
+  around it.
+- **Big nights are under-predicted.** The largest migration nights (e.g.
+  70,000 birds/km) are often several times higher than predicted. Models like
+  these pull extremes toward the average; mass-migration nights may depend on
+  conditions farther south, where the birds took off, not just over the radar.
+- **One season, three stations.** About 300 nights, strongly correlated in
+  time. Leave-one-week-out validation guards against overfitting, but effects
+  are estimates for spring 2026 in Southern California, not general laws.
+- **Weather resolution.** ERA5 cells are about 30 km across, coarser than
+  local coastal effects such as the marine layer.
+- **Radar sees all night migrants.** The timing comparison shows alignment
+  with our six species, not that they make up the radar signal.
+- **eBird presence vs radar movement.** The weekly change in share is our
+  proxy for movement. Birds passing straight through California without
+  lingering barely change its share, so they're under-counted by it; and
+  arrivals and departures in the same week partly cancel out.
+
+## Citations for this notebook
+
+- Weather: Zippenfenig, P. (2023). Open-Meteo.com Weather API. Zenodo.
+  https://doi.org/10.5281/ZENODO.7970649. Underlying data: ERA5 (Hersbach et
+  al. 2020). Required notice: "Generated using Copernicus Climate Change
+  Service information 2022." Licence CC BY 4.0.
+- Van Doren, B. M., & Horton, K. G. (2018). A continental system for
+  forecasting bird migration. *Science* 361, 1115–1118.
+- Wright, M. N., & Ziegler, A. (2017). ranger: A fast implementation of random
+  forests. *Journal of Statistical Software* 77(1).

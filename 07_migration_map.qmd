@@ -1,0 +1,336 @@
+---
+title: "07 · Migration map"
+subtitle: "An animated map of simulated routes and nightly radar counts, for the website"
+format:
+  html:
+    toc: true
+execute:
+  warning: false
+  message: false
+---
+
+## What this notebook makes
+
+One self-contained web page, `figures/migration_map.html`, that animates the
+spring season:
+
+- **Moving lines:** the simulated BirdFlow routes from notebook 03, one line
+  per simulated bird, coloured by species, each with a fading tail.
+- **Circles over Southern California:** the three radars from notebook 05,
+  growing and shrinking with the birds detected aloft each night.
+- **A control panel:** play/pause, a date slider, a radar chart with a
+  "tonight" marker, species on/off switches, and a filter for routes that
+  pass through our study states.
+
+The page is plain HTML and JavaScript, so it works on GitHub Pages: copy the
+file into the website repository and link to it (see the end of this
+notebook). It uses **deck.gl**, a free, open-source mapping library, which the
+page loads from a public CDN when someone opens it.
+
+**How it's built:** the page's design and behaviour live in
+`templates/migration_map_template.html` (commented, so it can be edited). This
+notebook only prepares the data and inserts it into that template. To change
+how the page looks, edit the template and re-run this notebook.
+
+**Data rules:** the page contains only *derived* data (simulated routes,
+nightly radar totals, outlines), never raw eBird rasters, consistent with the
+eBird Status & Trends terms (Educational use). The required citation and
+disclaimer are printed at the bottom of the page.
+
+```{r setup}
+source(here::here("R", "config.R"))
+source(here::here("R", "study_area.R"))
+
+library(dplyr)
+library(tidyr)
+library(readr)
+library(purrr)
+library(sf)
+library(jsonlite)
+library(lubridate)
+
+SEASON_START <- as.Date("2026-03-01")     # radar season, same as notebooks 05–06
+SEASON_END   <- as.Date("2026-06-15")
+RADAR_OUT    <- file.path(PATHS$derived, "radar", SEASON_LABEL)
+SITE_DIR     <- PATHS$figures   # the map page sits with the other figures
+
+# Species colours: the dark-surface version of our palette (the map uses a
+# night theme). Fixed order; validated for colour-blind separation and for
+# contrast against the map's land and water. The legend shows each species'
+# name next to its colour, so identity never depends on colour alone.
+SPECIES_COLS <- c("#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#0ca30c")
+
+# Species that migrate by DAY (tagged "day" in the legend: the night-time
+# radar doesn't count them).
+DAY_MIGRANTS <- c("rufhum")
+```
+
+## Step 1 · Load the simulated routes
+
+```{r load-routes}
+selection <- read_csv(file.path(PATHS$derived, "species_selection.csv"),
+                      show_col_types = FALSE) |>
+  filter(selected, use == "routes + abundance") |>
+  arrange(match(species_code, CANDIDATE_SPECIES))
+
+route_file <- \(code) file.path(PATHS$routes, paste0(code, "_", SEASON_LABEL, "_routes.geojson"))
+
+# Keep only species whose route file exists (notebook 03 must have run).
+selection <- selection |> filter(file.exists(route_file(species_code)))
+stopifnot("No route files found: run notebook 03 first" = nrow(selection) > 0)
+
+points <- map_dfr(selection$species_code, \(code) {
+  g  <- st_read(route_file(code), quiet = TRUE)
+  xy <- st_coordinates(g)
+  st_drop_geometry(g) |>
+    mutate(species_code = code, lon = xy[, 1], lat = xy[, 2])
+})
+
+points |> count(species_code, name = "route_points")
+```
+
+## Step 2 · Turn route points into animation paths
+
+The animation needs, for every simulated bird, its positions in order and the
+**day of year** it is at each one.
+
+One detail matters for how the animation looks. BirdFlow routes include
+**stopovers**, where a bird stays in the same place for one or more weeks
+(`stay_len`). If we only gave the map the day a bird *arrived* at a stopover,
+the map would slide it slowly towards the next stop the whole time it was
+resting. So for each stopover we add a second point at the day the bird
+*leaves*, at the same position. The bird then waits, then flies.
+
+This works whichever way the route file stores stopovers (one row per week,
+or one row per stop with its length), because we combine consecutive rows at
+the same position and take the later of the two possible leaving dates.
+
+```{r build-trips}
+trips_long <- points |>
+  mutate(date     = as.Date(date),
+         stay_len = coalesce(as.numeric(stay_len), 1)) |>
+  arrange(species_code, route_id, date) |>
+  group_by(species_code, route_id) |>
+  # A new "run" starts whenever the position changes.
+  mutate(run = cumsum(c(TRUE, diff(lon) != 0 | diff(lat) != 0))) |>
+  group_by(species_code, route_id, crosses_study_area, run) |>
+  summarise(lon    = first(lon), lat = first(lat),
+            arrive = min(date),
+            leave  = max(max(date), min(date) + 7 * (first(stay_len) - 1)),
+            .groups = "drop_last") |>
+  # Never leave after arriving at the next stop.
+  mutate(leave = pmin(leave, lead(arrive, default = as.Date("2100-01-01")))) |>
+  ungroup() |>
+  pivot_longer(c(arrive, leave), values_to = "date") |>
+  distinct(species_code, route_id, crosses_study_area, lon, lat, date) |>
+  arrange(species_code, route_id, date) |>
+  # BirdFlow dates describe a typical year; we use day of year for the
+  # animation (a leap year would shift dates by at most one day).
+  mutate(doy = yday(date))
+
+# One record per simulated bird. Coordinates are rounded to 0.01° (~1 km),
+# far finer than BirdFlow's ~100 km cells, to keep the page small.
+trips <- trips_long |>
+  group_by(species_code, route_id, crosses_study_area) |>
+  filter(n() >= 2) |>                       # need at least two points to move
+  summarise(p = list(unname(round(cbind(lon, lat), 2))),
+            t = list(doy), .groups = "drop") |>
+  mutate(s = match(species_code, selection$species_code) - 1,   # 0-based index for JavaScript
+         x = as.integer(crosses_study_area))
+
+trips |> count(species_code, name = "simulated_birds")
+```
+
+## Step 3 · Species summary for the legend
+
+```{r species}
+species_json <- trips |>
+  group_by(species_code) |>
+  summarise(n_routes = n(), pct_study = round(100 * mean(x))) |>
+  right_join(selection |> select(species_code, common_name), by = "species_code") |>
+  arrange(match(species_code, selection$species_code)) |>
+  mutate(color = map(seq_along(species_code), \(i) as.vector(col2rgb(SPECIES_COLS[i]))))
+
+species_json |> select(common_name, n_routes, pct_study)
+```
+
+## Step 4 · Radar: one value per station per night
+
+```{r radar}
+radar <- list.files(file.path(RADAR_OUT, "nights"), pattern = "\\.csv$",
+                    full.names = TRUE) |>
+  map_dfr(\(f) read_csv(f, show_col_types = FALSE,
+                        col_types = cols(night = col_date(),
+                                         peak_time_local = col_character()))) |>
+  filter(status == "ok", night >= SEASON_START, night <= SEASON_END) |>
+  mutate(doy = yday(night))
+
+# Station coordinates, read from a saved radar profile (as in notebook 06).
+coords <- map_dfr(RADAR_STATIONS, \(s) {
+  f <- list.files(file.path(RADAR_OUT, "profiles"), pattern = paste0("^", s, "_"),
+                  full.names = TRUE)[1]
+  v <- readRDS(f)
+  tibble(code = s, lat = v$attributes$where$lat, lon = v$attributes$where$lon)
+})
+
+# Display names, and where each label sits relative to its circle (pixels).
+# The three radars are close together, so labels point in different
+# directions to avoid overlapping.
+station_info <- tibble(
+  code   = c("KNKX", "KSOX", "KVTX"),
+  label  = c("San Diego", "Santa Ana Mountains", "Los Angeles (Ventura)"),
+  offset = list(c(-12, 6), c(12, 0), c(-12, -6))   # [right, down] in pixels
+)
+
+doy_range <- yday(SEASON_START):yday(SEASON_END)
+
+# One array per station: birds/km for each night (NA where missing).
+pass <- map(RADAR_STATIONS, \(s) {
+  r <- radar |> filter(station == s)
+  unname(r$total_passage[match(doy_range, r$doy)])
+})
+
+stations_json <- coords |>
+  left_join(station_info, by = "code") |>
+  mutate(offset = map(offset, unname))
+
+stations_json
+```
+
+## Step 5 · Background map
+
+Land outlines for North and Central America, plus our study states outlined
+on top. Both come from the `maps` package (no downloads), simplified so the
+page stays small.
+
+```{r basemap}
+sf_use_s2(FALSE)   # planar geometry is fine for simplifying outlines
+
+americas <- c("USA", "Canada", "Mexico", "Guatemala", "Belize", "Honduras",
+              "El Salvador", "Nicaragua", "Costa Rica", "Panama", "Cuba",
+              "Jamaica", "Haiti", "Dominican Republic", "Bahamas",
+              "Colombia", "Venezuela")
+
+land <- maps::map("world", regions = americas, plot = FALSE, fill = TRUE) |>
+  st_as_sf()
+land <- suppressWarnings(st_set_crs(land, 4326)) |>   # datum note: see R/study_area.R
+  st_make_valid()
+# Simplify to ~0.05° (~5 km). sf warns that this tolerance is in degrees for
+# lon/lat data; that's what we intend, so the warning is silenced.
+land <- suppressWarnings(st_simplify(land, dTolerance = 0.05, preserveTopology = TRUE))
+
+study <- study_states(merge = TRUE) |> st_transform(4326)
+
+sf_use_s2(TRUE)
+
+#' sf object -> GeoJSON text, coordinates rounded to 2 decimals (~1 km).
+as_geojson <- function(x) {
+  f <- tempfile(fileext = ".geojson")
+  st_write(st_geometry(x), f, driver = "GeoJSON", quiet = TRUE,
+           layer_options = "COORDINATE_PRECISION=2")
+  paste(readLines(f, warn = FALSE), collapse = "")
+}
+land_json  <- as_geojson(land)
+study_json <- as_geojson(study)
+
+c(land_kb = nchar(land_json) %/% 1000, study_kb = nchar(study_json) %/% 1000)
+```
+
+## Step 6 · Assemble the page
+
+```{r assemble}
+# Animation runs from the earliest route or radar night to the latest.
+time_start <- min(map_dbl(trips$t, min), min(doy_range))
+time_end   <- min(max(map_dbl(trips$t, max), max(doy_range)), yday(SEASON_END) + 14)
+
+html_escape <- \(x) x |> gsub("&", "&amp;", x = _, fixed = TRUE) |>
+  gsub("<", "&lt;", x = _, fixed = TRUE) |> gsub(">", "&gt;", x = _, fixed = TRUE)
+
+credits <- c(
+  "Lines are <strong>simulated</strong> routes from BirdFlow models of each species, not tracked birds. Radar counts are birds per km of migration front per night, estimated with vol2bird.",
+  html_escape(paste("Routes:", "Fuentes, M., Van Doren, B. M., Fink, D., & Sheldon, D. (2023). BirdFlow: Learning seasonal bird movements from eBird data. Methods in Ecology and Evolution, 14(3), 923–938. https://doi.org/10.1111/2041-210X.14052")),
+  html_escape(paste("eBird data:", EBIRD_CITATION)),
+  html_escape(EBIRD_DISCLAIMER),
+  html_escape("Radar: NOAA National Weather Service Radar Operations Center (1991). NEXRAD Level II Base Data. NOAA NCEI. doi:10.7289/V5W9574V. Processed with vol2bird / bioRad (Dokter et al. 2011)."),
+  html_escape("Map library: deck.gl (MIT licence). Outlines: R maps package.")
+)
+
+map_data <- list(
+  species = species_json |>
+    transmute(code = species_code, name = common_name, color, n_routes, pct_study,
+              diurnal = species_code %in% DAY_MIGRANTS),
+  trips   = trips |> select(s, x, p, t),
+  radar   = list(stations = stations_json |> select(code, label, lon, lat, offset),
+                 doy0 = min(doy_range), pass = pass),
+  time    = list(start = time_start, end = time_end, year = year(SEASON_START)),
+  # Initial view: the Pacific Flyway from Mexico to British Columbia.
+  view    = list(longitude = -116, latitude = 36, zoom = 3.4, pitch = 0, bearing = 0),
+  credits = credits
+)
+
+json <- toJSON(map_data, auto_unbox = TRUE, na = "null", digits = NA)
+# Insert the GeoJSON outlines as raw JSON (they're already JSON text).
+json <- sub("^\\{", paste0('{"land":', land_json, ',"study":', study_json, ','), json)
+# Safety: text inside a <script> block must never contain "</".
+json <- gsub("</", "<\\/", json, fixed = TRUE)
+
+template <- paste(readLines(here::here("templates", "migration_map_template.html"),
+                            warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+# Splice the data in at the placeholder. (Split-and-paste rather than sub(),
+# because sub() would treat backslashes in the data as special characters.)
+parts <- strsplit(template, "__MAP_DATA__", fixed = TRUE)[[1]]
+stopifnot("Template must contain the data placeholder exactly once" = length(parts) == 2)
+page <- paste0(parts[1], json, parts[2])
+
+out <- file.path(SITE_DIR, "migration_map.html")
+# Write as UTF-8 explicitly so characters like "–" and "×" survive on any
+# computer, whatever its language settings.
+con <- file(out, open = "w", encoding = "UTF-8")
+writeLines(enc2utf8(page), con)
+close(con)
+cat("Wrote", out, "-", round(file.size(out) / 1e6, 2), "MB\n")
+```
+
+## Step 7 · Look at it, then publish
+
+**Preview:** open `figures/migration_map.html` in a web browser (in RStudio's
+Files pane: click it → *View in Web Browser*). It needs an internet connection
+the first time, to load the deck.gl library.
+
+Check:
+
+- routes start in Mexico/Central America and move north through the season;
+- the radar circles swell in late April, matching notebook 06's timing;
+- hovering a moving dot shows its species; hovering a radar circle shows that
+  night's count;
+- the species switches and the "only routes through the study states" filter
+  work.
+
+**Publish on the website (GitHub Pages):**
+
+1. Copy `figures/migration_map.html` into the website repository (for example as
+   `map.html`, or into a `map/` folder as `index.html`).
+2. Commit and push. GitHub Pages serves it at
+   `https://<user>.github.io/<repo>/map.html`.
+3. Link to it from the site's pages, or embed it in an existing page:
+
+   ```html
+   <iframe src="map.html" title="Spring migration map" width="100%" height="900"
+           style="border:0"></iframe>
+   ```
+
+**When data change** (a different species, the fall season, more routes),
+re-run notebooks 03 and 07 and copy the new file over. The template doesn't
+change.
+
+## Limitations to state alongside the map
+
+- **Routes are simulated.** Each line is a draw from a probability model of the
+  species' movement, not a tracked individual. The *pattern* across 200 lines
+  per species is the result; any single line is illustrative.
+- **Timing comes from a typical year** (eBird's modelled weeks), while the
+  radar circles show **spring 2026** nights. The match between them is the
+  subject of notebook 06, not something the map proves.
+- **Weekly steps.** BirdFlow moves birds once a week, so the animation
+  interpolates smoothly between weekly positions; real birds fly in nightly
+  hops with rest days in between.

@@ -38,3 +38,5 @@ _output/
 .Rproj.user
 .httr-oauth
 .quarto
+
+**/*.quarto_ipynb

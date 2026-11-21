@@ -3,6 +3,9 @@
 # below IN THIS ORDER, which matters: each one reads the previous one's
 # outputs. 00_setup is excluded because it installs packages and asks for
 # your key, which should be done by hand.
+#
+# 05_Radar_season has `eval: false`, so rendering it publishes the code and
+# explanation only. The season run itself is started by hand (it takes hours).
 project:
   type: default
   output-dir: _output
@@ -11,6 +14,9 @@ project:
     - 02_ebird_abundance.qmd
     - 03_birdflow_routes.qmd
     - 04_radar_test_night.qmd
+    - 05_Radar_season.qmd
+    - 06_migration_models.qmd
+    - 07_migration_map.qmd
 
 format:
   html:
@@ -18,8 +24,3 @@ format:
     code-fold: show       # code visible but collapsible for non-coders
     code-tools: true
     embed-resources: true # each rendered page is one shareable .html file
-
-execute:
-  # Cache results so re-rendering doesn't re-download or re-run slow steps
-  # unless the code in that chunk changed.
-  cache: true

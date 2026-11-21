@@ -1,0 +1,10 @@
+series,q10,q50,q90,group,q10_date,q50_date,q90_date
+KNKX,82,118,131,Radar station (birds passing),2026-03-23,2026-04-28,2026-05-11
+KSOX,77,114,130,Radar station (birds passing),2026-03-18,2026-04-24,2026-05-10
+KVTX,92,118,136,Radar station (birds passing),2026-04-02,2026-04-28,2026-05-16
+Cassin's Vireo,95,102,130,Species (eBird movement in/out of California),2026-04-05,2026-04-12,2026-05-10
+Golden-crowned Sparrow,109,116,123,Species (eBird movement in/out of California),2026-04-19,2026-04-26,2026-05-03
+Lazuli Bunting,102,116,144,Species (eBird movement in/out of California),2026-04-12,2026-04-26,2026-05-24
+Rufous Hummingbird,67,95,123,Species (eBird movement in/out of California),2026-03-08,2026-04-05,2026-05-03
+Virginia's Warbler,116,137,158,Species (eBird movement in/out of California),2026-04-26,2026-05-17,2026-06-07
+Western Tanager,109,116,144,Species (eBird movement in/out of California),2026-04-19,2026-04-26,2026-05-24
