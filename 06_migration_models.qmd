@@ -1,6 +1,6 @@
 ---
 title: "06 · Migration models"
-subtitle: "When does migration happen, and what drives it night to night?"
+subtitle: "When does migration happen, what drives it, how high do birds fly, and what does it mean for Lights Out?"
 format:
   html:
     toc: true
@@ -11,8 +11,8 @@ execute:
 
 ## What this notebook answers
 
-Notebooks 01–05 built the datasets. This notebook uses them to answer two of
-our research questions with models:
+Notebooks 01–05 built the datasets. This notebook uses them to answer four
+questions:
 
 1. **Timing.** Does the spring migration measured by radar over Southern
    California line up with the movements of our six species, as measured by
@@ -20,13 +20,20 @@ our research questions with models:
 2. **Drivers.** What makes one night busy and the next quiet? We model nightly
    migration from weather (wind, temperature, pressure, rain, cloud) and
    season, following the approach of Van Doren & Horton (2018).
+3. **Altitude and timing.** How high, and at what time of night, do migrants
+   fly? This uses the altitude detail in the radar profiles that earlier
+   steps saved but only used as totals.
+4. **Lights out.** What do parts 1–3 say a lights-out campaign should do:
+   which weeks, which hours, which nights, and where?
 
 **Inputs** (all created by earlier notebooks):
 
 - `data/derived/radar/spring/nights/*.csv`: one row per station per night (05)
-- `data/derived/radar/spring/profiles/*.rds`: radar profiles, used here only
-  for each station's coordinates (05)
+- `data/derived/radar/spring/profiles/*.rds`: radar profiles: each station's
+  coordinates (Part 2) and the altitude detail (Part 3) (05)
 - `data/derived/weekly_population_share.csv`: weekly eBird shares (02)
+- `data/derived/routes/*_routes.geojson` and `species_selection.csv`:
+  simulated BirdFlow routes (03), used only in Part 4's optional light step
 
 **New input:** hourly weather for each radar site from the Open-Meteo
 historical API (ERA5 reanalysis). It's free for non-commercial use with no
@@ -34,11 +41,24 @@ key, licensed CC BY 4.0. We make **one request per station** for the whole
 season (3 requests in total), far below its limit of 10,000 requests per day,
 and save the results so later runs don't request them again.
 
-**Outputs:** `data/derived/weather/`, `data/derived/model_*.csv`, and figures
-`figures/06_*.png`.
+**Optional input (Part 4):** NASA Black Marble night lights, which need a
+free NASA Earthdata token. Without one, that step is skipped and everything
+else runs.
+
+**Outputs:** `data/derived/weather/`, `data/derived/model_*.csv`,
+`altitude_*.csv`, `time_of_night.csv`, `lights_out_*.csv`, `light_*.csv`, and
+figures `figures/06_*.png`.
 
 ```{r setup}
 source(here::here("R", "config.R"))
+source(here::here("R", "study_area.R"))   # study_states(), for Part 4
+
+# Load order matters: when two packages have a function with the same name,
+# the one loaded LAST wins. bioRad has its own map() (for radar images), so it
+# goes first and purrr's map() (used throughout) loads after it.
+library(bioRad)     # reads the radar profiles' altitude detail (Part 3)
+library(sf)         # simulated routes and cities (Part 4)
+library(terra)      # night-lights raster (Part 4)
 
 library(dplyr)
 library(tidyr)
@@ -50,16 +70,31 @@ library(jsonlite)   # reads the weather API's JSON response
 library(ranger)     # random forest (fast, no tuning needed to start)
 library(splines)    # ns(): smooth seasonal curve for the linear models
 
-# Same season window as notebook 05.
+# Same season window as notebook 05. It matches the Lights Out San Diego
+# spring program (March 1 – June 15), so Part 4 uses it as the program season.
 SEASON_START <- as.Date("2026-03-01")
 SEASON_END   <- as.Date("2026-06-15")
 RADAR_OUT    <- file.path(PATHS$derived, "radar", SEASON_LABEL)
+TZ           <- "America/Los_Angeles"
+
+# Part 3: height band treated as "low flight": within 400 m of the radar (two
+# 200 m layers). Tall buildings and their lit windows sit in this band.
+LOW_BAND_M <- 400
+
+# Part 4: Lights Out San Diego (San Diego Bird Alliance), spring 2026 program.
+PROGRAM_PEAK  <- as.Date(c("2026-04-15", "2026-05-15"))   # its "critical peak"
+# Its hours, 11 pm to 6 am, on a clock that keeps counting past midnight
+# (so 1:30 am = 25.5 and 6 am = 30).
+LIGHTS_OFF_START <- 23
+LIGHTS_OFF_END   <- 30
+FOCUS_STATION    <- "KNKX"   # San Diego: the radar watching the program's city
 
 # Station colours: fixed order, validated for colour-blind separation
 # (blue, orange, aqua). Used consistently in every figure.
 STATION_COLS <- c(KNKX = "#2a78d6", KSOX = "#eb6834", KVTX = "#1baf7a")
 INK   <- "#1f1f1c"   # primary text
 QUIET <- "#6b6a63"   # secondary text, observed values
+ACCENT <- "#2a78d6"  # single-series bars
 
 theme_capstone <- theme_minimal(base_size = 12) +
   theme(panel.grid.minor = element_blank(),
@@ -69,6 +104,12 @@ theme_capstone <- theme_minimal(base_size = 12) +
         plot.title = element_text(face = "bold", colour = INK),
         plot.subtitle = element_text(colour = QUIET),
         plot.caption = element_text(colour = QUIET, size = 9))
+RADAR_CAPTION <- "Radar: NOAA NEXRAD via vol2bird / bioRad (Dokter et al. 2011)."
+
+# Clock labels for decimal hours past midnight: 23 -> "11 PM", 25 -> "1 AM".
+# ("%I" gives "09"; we drop the leading zero ourselves, since the shorter
+# "%-I" code works on Linux but not on macOS or Windows.)
+clock_label <- \(x) sub("^0", "", format(as.POSIXct("2026-01-01", tz = "UTC") + (x %% 24) * 3600, "%I %p"))
 ```
 
 ## Load the radar season
@@ -507,6 +548,11 @@ model_scores <- bind_rows(
   score(cv_rf,      "Random forest")
 )
 write_csv(model_scores, file.path(PATHS$derived, "model_scores.csv"))
+
+# Held-out predictions of the linear weather model, one per station-night.
+# Part 4 uses these to test a forecast-style "lights out tonight" alert.
+write_csv(cv_weather |> transmute(station, night, observed = 10^y, predicted = 10^pred),
+          file.path(PATHS$derived, "model_cv_predictions.csv"))
 model_scores
 ```
 
@@ -674,12 +720,588 @@ ggsave(file.path(PATHS$figures, "06_observed_vs_predicted.png"), p_obs, width = 
 Where the line misses big spikes, look at those nights: are they the
 non-northward nights flagged at the start (possible rain or insects), or real
 mass-migration nights the model can't anticipate from 9 pm weather alone?
+# Part 3 · Flight altitudes and timing
+
+Notebook 05 saved a full **vertical profile** for every station-night: the
+density of birds in each 200 m layer of air, every 5–10 minutes. Parts 1–2
+only used the totals. Here we use the altitude detail for three questions:
+
+1. **How high do migrants fly?** This tells us whether the wind we modelled in
+   Part 2 (at 100 m) is near where birds actually fly.
+2. **When in the night do they fly?** Lights Out San Diego asks for lights off
+   from **11 pm to 6 am**. How much of the night's migration happens inside
+   that window?
+3. **Does wind change flight height?** Radar studies often find birds fly
+   lower into headwinds. Low flight matters for collisions: it brings birds
+   down among lit buildings.
+
+## Two things to know about the radar's altitudes
+
+- **Heights are above sea level.** We convert them to **height above the
+  radar**. That's a good stand-in for height above the ground around **San
+  Diego (KNKX)**, whose radar sits low (a few hundred metres up) close to the
+  city. **KSOX and KVTX sit on mountaintops** (very roughly 900 m and 800 m),
+  so their "height above the radar" is not height above the coastal cities
+  below. We report all three, but use **KNKX** for anything about birds flying
+  low over a city.
+- **The lowest layers are the least certain.** Near the radar, ground clutter
+  and the beam's geometry make the bottom one or two layers hard to measure,
+  so very low flight is likely *under*-counted.
+
+## Read every saved profile
+
+Each file is one station-night (a `vpts` object from bioRad). For each, we
+keep only scans between sunset and sunrise, then extract:
+
+- **layers:** the average density of birds in each altitude layer over the
+  night (for the altitude profiles);
+- **scans:** each scan's migration traffic (MTR) and mean flight height (for
+  timing and nightly heights). We use bioRad's `integrate_profile()`, the same
+  function as notebook 05, so the numbers match.
+
+```{r read-profiles}
+prof_files <- list.files(file.path(RADAR_OUT, "profiles"), pattern = "\\.rds$",
+                         full.names = TRUE)
+length(prof_files)
+
+read_profile <- function(f) {
+  v       <- readRDS(f)
+  station <- sub("_.*", "", basename(f))
+  night   <- as.Date(sub("^[A-Z]{4}_(.*)\\.rds$", "\\1", basename(f)))
+  is_dark <- check_night(v)                    # one TRUE/FALSE per scan
+  if (sum(is_dark) < 2) return(NULL)
+
+  antenna  <- v$attributes$where$height        # radar antenna, m above sea level
+  interval <- v$attributes$where$interval      # layer thickness, m (200)
+
+  # Bird density (birds/km³): rows = altitude layers, columns = scans.
+  dens <- v$data$dens[, is_dark, drop = FALSE]
+  dens[is.na(dens)] <- 0
+
+  layers <- tibble(
+    station, night,
+    height_asl   = v$height + interval / 2,             # layer centre, above sea level
+    height_radar = v$height + interval / 2 - antenna,   # layer centre, above the radar
+    dens         = rowMeans(dens)                       # mean over the night's scans
+  )
+
+  vpi <- integrate_profile(v)
+  scans <- as.data.frame(vpi) |>
+    mutate(is_dark = check_night(vpi)) |>
+    filter(is_dark) |>
+    transmute(station, night, datetime, mtr, vid,
+              height_radar = height - antenna)         # mean flight height of this scan
+
+  list(layers = layers, scans = scans, antenna = tibble(station, antenna))
+}
+
+profiles <- map(prof_files, read_profile) |> compact()
+
+layers  <- map_dfr(profiles, "layers")
+scans   <- map_dfr(profiles, "scans")
+antenna <- map_dfr(profiles, "antenna") |> distinct()
+
+antenna   # radar antenna heights, m above sea level
+count(scans, station, name = "night_scans")
+```
+
+## How high do they fly?
+
+```{r altitude-profile, fig.width=8, fig.height=5}
+# Share of each station's birds in each layer, over the whole season.
+# Each night's profile is weighted by how many birds were aloft that night,
+# so busy nights count more (as they do for collision risk).
+profile_season <- layers |>
+  filter(height_radar > 0) |>                          # can't see below the radar
+  group_by(station, height_radar) |>
+  summarise(dens = sum(dens), .groups = "drop_last") |>
+  mutate(share = dens / sum(dens)) |>
+  ungroup()
+
+write_csv(profile_season, file.path(PATHS$derived, "altitude_profile.csv"))
+
+# Height below which half of each station's birds flew (median flight height).
+median_height <- profile_season |>
+  arrange(station, height_radar) |>
+  group_by(station) |>
+  summarise(median_m = height_radar[which(cumsum(share) >= 0.5)[1]],
+            low_share = sum(share[height_radar < LOW_BAND_M]))
+median_height
+
+p_alt <- ggplot(profile_season, aes(share, height_radar, colour = station)) +
+  geom_path(linewidth = 1) +
+  geom_point(size = 1.6) +
+  geom_hline(yintercept = 100, linetype = "dashed", colour = QUIET, linewidth = 0.4) +
+  annotate("text", x = max(profile_season$share), y = 100, vjust = -0.5, hjust = 1,
+           label = "100 m: wind height used in Part 2", size = 3.2, colour = QUIET) +
+  scale_colour_manual(values = STATION_COLS, name = NULL) +
+  scale_x_continuous(labels = scales::percent) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(title = "Most spring migrants fly hundreds of metres up",
+       subtitle = "Share of the season's birds in each 200 m layer, by radar (nights only)",
+       x = "Share of birds", y = "Height above the radar (m)",
+       caption = paste(RADAR_CAPTION,
+                       "KSOX and KVTX sit on mountaintops; heights there are above the mountain.")) +
+  theme_capstone + theme(legend.position = "top", legend.justification = "left")
+
+p_alt
+ggsave(file.path(PATHS$figures, "06_altitude_profile.png"), p_alt, width = 8, height = 5, dpi = 200)
+```
+
+**How to read this:** the curve's peak is the most common flight height. The
+dashed line is where Part 2 measured wind. If most birds fly well above
+it, wind at their actual height (e.g. 850 hPa, about 1,500 m) is a natural
+next step for the weather model; say so in the limitations.
+
+## When in the night do they fly?
+
+We add up migration traffic in half-hour slots of **local clock time**, the
+way a lights-out schedule is written. Each scan's traffic rate is multiplied
+by the time until the next scan (as in notebook 05), giving birds per km
+passing in that slot.
+
+```{r time-of-night}
+scans_timed <- scans |>
+  arrange(station, night, datetime) |>
+  group_by(station, night) |>
+  mutate(hours = as.numeric(difftime(lead(datetime), datetime, units = "hours")),
+         hours = pmin(coalesce(hours, median(hours, na.rm = TRUE)), 1),
+         birds = mtr * hours) |>
+  ungroup() |>
+  mutate(local = with_tz(datetime, TZ),
+         # Clock time that keeps counting past midnight: 1:30 am = 25.5.
+         clock = hour(local) + minute(local) / 60,
+         clock = if_else(clock < 12, clock + 24, clock),
+         slot  = floor(clock * 2) / 2)
+
+time_of_night <- scans_timed |>
+  group_by(station, slot) |>
+  summarise(birds = sum(birds, na.rm = TRUE), .groups = "drop_last") |>
+  mutate(share = birds / sum(birds)) |>
+  ungroup()
+write_csv(time_of_night, file.path(PATHS$derived, "time_of_night.csv"))
+
+```
+
+```{r time-of-night-plot, fig.width=9, fig.height=4.8}
+p_tod <- ggplot(time_of_night, aes(slot + 0.25, share, colour = station)) +
+  annotate("rect", xmin = LIGHTS_OFF_START, xmax = LIGHTS_OFF_END, ymin = -Inf, ymax = Inf,
+           fill = "grey92") +
+  annotate("text", x = LIGHTS_OFF_START + 0.15, y = Inf, vjust = 1.5, hjust = 0, size = 3.2,
+           colour = QUIET, label = "Lights Out San Diego hours (11 pm – 6 am)") +
+  geom_line(linewidth = 1) +
+  scale_colour_manual(values = STATION_COLS, name = NULL) +
+  scale_x_continuous(breaks = seq(18, 30, 2), labels = clock_label) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "About a third of migrants fly before lights go off at 11 pm",
+       subtitle = "Share of each radar's spring passage in each half-hour of the night (local time)",
+       x = NULL, y = "Share of season's passage", caption = RADAR_CAPTION) +
+  theme_capstone + theme(legend.position = "top", legend.justification = "left")
+
+p_tod
+ggsave(file.path(PATHS$figures, "06_time_of_night.png"), p_tod, width = 9, height = 4.8, dpi = 200)
+```
+
+**How to read this:** the busiest half-hour holds only a small share of the
+night, so passage is spread over several hours. What matters for a lights-out
+schedule is how much of the curve falls *before* the shaded window. The
+table below puts a number on it. (In spring 2026 the peak came later at the
+northernmost radar, KVTX, than at KNKX. One possible reason: birds that take
+off at dusk farther south need hours to reach it. Worth checking, not assuming.)
+
+### How much would different start times cover?
+
+```{r lights-out-hours}
+# Share of the season's passage that happens between each candidate start
+# time and 6 am. Part 4 turns this into a recommendation.
+lights_out_hours <- expand_grid(station = names(STATION_COLS),
+                                start = c(20, 21, 22, 23)) |>
+  mutate(covered = map2_dbl(station, start, \(s, h) {
+    d <- time_of_night |> filter(station == s)
+    sum(d$share[d$slot >= h & d$slot < LIGHTS_OFF_END])
+  }))
+write_csv(lights_out_hours, file.path(PATHS$derived, "lights_out_hours.csv"))
+
+lights_out_hours |>
+  mutate(start = clock_label(start), covered = scales::percent(covered, 1)) |>
+  pivot_wider(names_from = start, values_from = covered)
+```
+
+Each column is "lights off from this time until 6 am". The 11 PM column is
+what the current program covers.
+
+## Does wind change flight height?
+
+One mean flight height per night (each scan's height weighted by how many
+birds were aloft), joined to the same weather as Part 2.
+
+```{r height-vs-wind}
+nightly_height <- scans |>
+  group_by(station, night) |>
+  summarise(height_radar = weighted.mean(height_radar, w = coalesce(vid, 0), na.rm = TRUE),
+            .groups = "drop") |>
+  filter(is.finite(height_radar))
+
+height_df <- nightly_height |>
+  inner_join(weather_features, by = c("station", "night")) |>
+  mutate(doy = yday(night)) |>
+  drop_na(tailwind, crosswind, temp, precip, cloud)
+
+write_csv(height_df |> select(station, night, height_radar),
+          file.path(PATHS$derived, "altitude_nightly.csv"))
+
+fit_height <- lm(height_radar ~ station + ns(doy, df = 4) + tailwind + crosswind +
+                   temp + precip + cloud, data = height_df)
+
+# Effects in metres of flight height per unit of each weather factor.
+summary(fit_height)$coefficients |>
+  as.data.frame() |>
+  tibble::rownames_to_column("term") |>
+  filter(term %in% c("tailwind", "crosswind", "temp", "precip", "cloud")) |>
+  transmute(term, metres_per_unit = round(Estimate, 1), p_value = signif(`Pr(>|t|)`, 2))
+```
+
+**How to read this:** a **positive** tailwind effect means birds fly
+**higher** with tailwinds (and lower into headwinds). That's consistent with
+birds seeking altitudes where wind helps, and it matters for collisions:
+headwind nights would bring birds down nearer lit buildings. With one season,
+treat p-values above 0.05 as "no clear effect".
+
+### Altitude summary for the report
+
+```{r altitude-summary}
+median_height |>
+  left_join(antenna, by = "station") |>
+  transmute(station, antenna_m_asl = round(antenna),
+            median_height_above_radar_m = median_m,
+            share_below_400m = scales::percent(low_share, 0.1))
+```
+
+# Part 4 · Lights out
+
+Artificial light at night draws migrating birds off course and into
+collisions with buildings. In Chicago, Van Doren et al. (2021) found that
+darkening half of a building's windows cut fatal collisions by about 60%,
+and that collisions rose with the number of birds migrating overhead.
+Horton et al. (2019) showed that Los Angeles is among the US cities where
+migrants are most exposed to light.
+
+**Lights Out San Diego** (San Diego Bird Alliance) asks residents and
+buildings to turn off non-essential lights from **11 pm to 6 am**, through
+spring migration (**March 1 – June 15**), with a **critical peak of April 15 –
+May 15**.
+
+What do Parts 1–3 say a campaign like this should do?
+
+1. **Which weeks?** Does April 15 – May 15 capture the peak? What's the best
+   window of a given length?
+2. **Which hours?** How much migration happens before 11 pm? (from Part 3)
+3. **Which nights?** Could weather-based alerts, using Part 2's model,
+   protect more birds than a fixed calendar with the same number of nights?
+4. **Where?** Where do the simulated routes cross the most light?
+   (NASA Black Marble night-lights data; optional, needs a free NASA login.)
+
+We use **San Diego (KNKX)** for the timing questions, as the radar that
+watches the program's own city, and report the other radars for comparison.
+
+```{r lights-radar}
+# The same nights as Part 1. Missing or failed nights count as unknown; for
+# "share of the season" we treat them as zero and report how many there were.
+nightly <- radar |>
+  mutate(passage = if_else(status == "ok", total_passage, NA_real_))
+
+count(nightly, station, ok = !is.na(passage))
+```
+
+## Which weeks?
+
+For each station, we find the **best window** of a given length: the run of
+consecutive nights that contains the largest share of the season's birds. We
+compare it with the program's April 15 – May 15 peak (31 nights).
+
+```{r windows}
+#' Best window of `len` consecutive nights: start date and share captured.
+best_window <- function(d, len) {
+  d <- arrange(d, night)
+  p <- coalesce(d$passage, 0)
+  sums <- stats::filter(p, rep(1, len), sides = 1)      # rolling sum ending at each night
+  i <- which.max(sums)
+  tibble(length = len, start = d$night[i - len + 1], end = d$night[i],
+         share = as.numeric(sums[i]) / sum(p))
+}
+
+program_share <- function(d) {
+  p <- coalesce(d$passage, 0)
+  sum(p[d$night >= PROGRAM_PEAK[1] & d$night <= PROGRAM_PEAK[2]]) / sum(p)
+}
+
+windows <- nightly |>
+  group_by(station) |>
+  group_modify(\(d, key) bind_rows(
+    tibble(length = 31, start = PROGRAM_PEAK[1], end = PROGRAM_PEAK[2],
+           share = program_share(d), window = "Program peak (Apr 15 – May 15)"),
+    map_dfr(c(14, 21, 31), \(L) best_window(d, L)) |>
+      mutate(window = paste0("Best ", length, " nights"))
+  )) |>
+  ungroup()
+
+write_csv(windows, file.path(PATHS$derived, "lights_out_windows.csv"))
+
+windows |>
+  mutate(dates = paste(format(start, "%b %d"), "–", format(end, "%b %d")),
+         share = scales::percent(share, 0.1)) |>
+  select(station, window, dates, share) |>
+  arrange(station, window)
+```
+
+**How to read this:** if the program's peak captures nearly as much as the
+best 31-night window, its dates are well chosen. If the best window is
+shifted, that's a concrete, data-based recommendation (e.g. "start a week
+earlier"). The 14- and 21-night rows show how concentrated migration is:
+a high share in a short window means a short, intense campaign could do most
+of the good.
+
+```{r window-plot, fig.width=10, fig.height=4.5}
+best31 <- windows |> filter(station == FOCUS_STATION, window == "Best 31 nights")
+
+p_win <- nightly |>
+  filter(station == FOCUS_STATION) |>
+  ggplot(aes(night, passage)) +
+  annotate("rect", xmin = PROGRAM_PEAK[1] - 0.5, xmax = PROGRAM_PEAK[2] + 0.5,
+           ymin = -Inf, ymax = Inf, fill = "grey90") +
+  annotate("text", x = PROGRAM_PEAK[1], y = Inf, vjust = 1.5, hjust = 0, size = 3.2,
+           colour = QUIET, label = "Program peak: Apr 15 – May 15") +
+  geom_col(fill = ACCENT, width = 0.8) +
+  annotate("segment", x = best31$start - 0.5, xend = best31$end + 0.5,
+           y = -Inf, yend = -Inf, colour = INK, linewidth = 2) +
+  annotate("text", x = best31$start, y = 0, vjust = -0.6, hjust = 0, size = 3.2, colour = INK,
+           label = paste0("Best 31 nights: ", format(best31$start, "%b %d"), " – ",
+                          format(best31$end, "%b %d"))) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_date(date_labels = "%b %d", date_breaks = "2 weeks") +
+  labs(title = "Spring migration over San Diego, night by night",
+       subtitle = "Birds per km of migration front per night, KNKX radar, spring 2026",
+       x = NULL, y = "Birds per km per night", caption = RADAR_CAPTION) +
+  theme_capstone
+
+p_win
+ggsave(file.path(PATHS$figures, "06_season_window.png"), p_win, width = 10, height = 4.5, dpi = 200)
+```
+
+## Which hours?
+
+From Part 3: the share of the season's passage that happens between each
+start time and 6 am.
+
+```{r hours}
+lights_out_hours |>
+  mutate(start = clock_label(start), covered = scales::percent(covered, 1)) |>
+  pivot_wider(names_from = start, values_from = covered)
+```
+
+If a large share of birds fly before 11 pm, an earlier start (or "from an
+hour after sunset") is an easy recommendation. Many evening lights are
+decorative and already off by midnight; the hours *before* 11 pm are when
+more lights are on.
+
+## Which nights? Calendar vs weather alerts
+
+Migration comes in pulses: a few big nights carry much of the season. BirdCast
+already issues local migration forecasts, so a campaign could add "lights out
+**tonight**" alerts on top of its calendar.
+
+We test this with Part 2's linear weather model. Its **held-out
+predictions** (each night predicted by a model that never saw that week) act
+as stand-in forecasts. For a fair comparison we give both strategies the
+**same number of nights** (31):
+
+- **Calendar:** the program's April 15 – May 15.
+- **Alerts:** the 31 nights with the highest *predicted* migration anywhere
+  in the season.
+- **Perfect hindsight:** the 31 actually-busiest nights (the ceiling).
+
+```{r alerts}
+# Held-out predictions from Part 2's cross-validation, back on the
+# birds-per-km scale.
+cv <- cv_weather |>
+  transmute(station = as.character(station), night,
+            observed = 10^y, predicted = 10^pred)
+
+N_NIGHTS <- as.integer(diff(PROGRAM_PEAK)) + 1   # 31
+
+strategy_share <- function(d) {
+  total <- sum(d$observed)
+  tibble(
+    calendar  = sum(d$observed[d$night >= PROGRAM_PEAK[1] & d$night <= PROGRAM_PEAK[2]]) / total,
+    alerts    = sum(d$observed[rank(-d$predicted, ties.method = "first") <= N_NIGHTS]) / total,
+    hindsight = sum(d$observed[rank(-d$observed,  ties.method = "first") <= N_NIGHTS]) / total
+  )
+}
+
+strategies <- cv |>
+  group_by(station) |>
+  group_modify(\(d, key) strategy_share(d)) |>
+  ungroup()
+
+write_csv(strategies, file.path(PATHS$derived, "lights_out_strategies.csv"))
+strategies |> mutate(across(-station, \(x) scales::percent(x, 0.1)))
+```
+
+**How to read this:** each column is the share of the season's birds that
+flew on the 31 protected nights.
+
+- If **alerts > calendar**, weather-based alerts protect more birds for the
+  same effort: a strong case for pairing the calendar with forecast alerts.
+- If the two are close, the calendar is already well placed, and alerts add
+  little *at this level of forecast skill*.
+- The gap to **hindsight** shows how much better a perfect forecast could do.
+
+**Caveat:** our "forecasts" use observed weather (ERA5 reanalysis). A real
+alert would use a weather forecast issued that afternoon, which is somewhat
+less accurate, so treat the alert result as an upper bound.
+
+## Where? Light along the routes (optional)
+
+This step uses **NASA Black Marble** (VNP46A4), an annual map of night-time
+light from the VIIRS satellite instrument, at about 500 m resolution. We
+measure how much light the simulated birds from notebook 03 fly over, week by
+week, and where along the routes it's brightest.
+
+**One-time setup (each teammate who runs this step):**
+
+1. Create a free NASA Earthdata account and generate a **bearer token**,
+   following the `blackmarbler` package's instructions
+   (<https://worldbank.github.io/blackmarbler/>). The account needs your study
+   area, user type and organisation filled in, or the token won't work.
+2. Store the token outside the project, like the eBird key:
+   `usethis::edit_r_environ()`, add a line `NASA_BEARER=<your token>`, save,
+   and restart R.
+3. `install.packages("blackmarbler")`
+
+If no token is set, this step is skipped and everything else still runs.
+
+```{r get-lights}
+LIGHTS_YEAR <- 2025   # most recent full year; use 2024 if 2025 isn't published yet
+lights_file <- file.path(PATHS$raw, paste0("black_marble_", LIGHTS_YEAR, ".tif"))
+have_lights <- file.exists(lights_file)
+
+if (!have_lights && nzchar(Sys.getenv("NASA_BEARER"))) {
+  library(blackmarbler)
+  roi <- study_states(merge = TRUE) |> st_transform(4326)
+  # Annual composite of night-time radiance (nW/cm²/sr), snow-free, near-nadir
+  # view (the package default for VNP46A4). Downloads a few tiles once, then we
+  # save the result so later runs don't download again. data/raw is
+  # git-ignored: this is raw data, not a result.
+  lights_dl <- bm_raster(roi_sf = roi, product_id = "VNP46A4", date = LIGHTS_YEAR,
+                         bearer = Sys.getenv("NASA_BEARER"))
+  writeRaster(lights_dl, lights_file, overwrite = TRUE)
+  have_lights <- TRUE
+}
+
+if (!have_lights) message("No NASA token or saved lights file: skipping the light step.")
+```
+
+```{r light-exposure, eval = have_lights}
+lights <- rast(lights_file)
+
+# BirdFlow positions are ~100 km apart, so a single 500 m pixel is a noisy
+# guide to what a bird passes over. We average light over ~10 km squares first.
+lights10 <- aggregate(lights, fact = 20, fun = "mean", na.rm = TRUE)
+
+selection <- read_csv(file.path(PATHS$derived, "species_selection.csv"),
+                      show_col_types = FALSE) |>
+  filter(selected, use == "routes + abundance")
+
+route_points <- map_dfr(selection$species_code, \(code) {
+  f <- file.path(PATHS$routes, paste0(code, "_", SEASON_LABEL, "_routes.geojson"))
+  if (!file.exists(f)) return(NULL)
+  st_read(f, quiet = TRUE) |> mutate(species_code = code)
+})
+
+# Light under each weekly position (outside the study states: no data, NA).
+route_points$radiance <- terra::extract(lights10, vect(route_points))[, 2]
+
+# "Bright": above 10 nW/cm²/sr, roughly suburban to urban. A rough threshold;
+# the table below also reports average radiance, which doesn't depend on it.
+BRIGHT <- 10
+
+exposure_week <- route_points |>
+  st_drop_geometry() |>
+  filter(!is.na(radiance)) |>
+  mutate(week = floor_date(as.Date(date), "week")) |>
+  group_by(species_code, week) |>
+  summarise(positions = n(), mean_radiance = mean(radiance),
+            share_bright = mean(radiance > BRIGHT), .groups = "drop")
+
+write_csv(exposure_week, file.path(PATHS$derived, "light_exposure_weekly.csv"))
+
+exposure_species <- route_points |>
+  st_drop_geometry() |>
+  filter(!is.na(radiance)) |>
+  group_by(species_code) |>
+  summarise(positions_in_study_area = n(),
+            mean_radiance = round(mean(radiance), 1),
+            share_over_bright_land = scales::percent(mean(radiance > BRIGHT), 0.1)) |>
+  left_join(selection |> select(species_code, common_name), by = "species_code") |>
+  arrange(desc(mean_radiance))
+exposure_species
+```
+
+```{r hotspots, eval = have_lights}
+# Which cities do the routes cross where the sky is brightest? For each
+# simulated-bird position over bright land, find the nearest city of 100,000+
+# people (within 25 km), then add up by city. Campaigns are organised by city,
+# so this ranks where switching lights off would shield the most birds.
+cities <- maps::us.cities |>
+  filter(pop > 100000) |>
+  st_as_sf(coords = c("long", "lat"), crs = 4326)
+
+lit_points <- route_points |> filter(!is.na(radiance), radiance > BRIGHT)
+nearest_i  <- st_nearest_feature(lit_points, cities)
+lit_points$city    <- cities$name[nearest_i]
+lit_points$dist_km <- as.numeric(st_distance(lit_points, cities[nearest_i, ], by_element = TRUE)) / 1000
+
+hotspots <- lit_points |>
+  st_drop_geometry() |>
+  filter(dist_km <= 25) |>
+  group_by(city) |>
+  summarise(bird_positions = n(),               # simulated-bird weeks spent near this city
+            species = n_distinct(species_code),
+            mean_radiance = round(mean(radiance), 1),
+            exposure = round(sum(radiance)),      # positions × brightness
+            .groups = "drop") |>
+  slice_max(exposure, n = 10)
+
+write_csv(hotspots, file.path(PATHS$derived, "light_hotspots.csv"))
+hotspots
+```
+
+**How to read the light results:**
+
+- **Species table:** which species' routes spend the most time over bright
+  land. Coastal species passing the Los Angeles–San Diego corridor should rank
+  high.
+- **Hotspot cities:** where many simulated birds pass over strong light.
+  `exposure` adds up brightness over every simulated-bird week near the city,
+  so it rewards both lots of birds and lots of light. These are where a
+  campaign would shield the most birds per light switched off.
+
+## Recommendations
+
+Fill in from the results above (in your own words for the report):
+
+| Question | Current program | What our data say |
+|---|---|---|
+| Season peak | Apr 15 – May 15 | *best 31 nights at KNKX + share captured* |
+| Hours | 11 pm – 6 am | *share of birds before 11 pm; suggested start* |
+| Nightly alerts | not used | *alerts vs calendar share, same number of nights* |
+| Where | San Diego County | *top hotspot cities from the light step* |
 
 ## Limitations to carry into the report
 
-- **Weather height.** Wind is at 100 m, while most migrants fly higher. A
-  next step is pressure-level winds (e.g. 925 hPa, about 750 m), or using the
-  radar's own altitude profiles to weight winds by where birds actually fly.
+- **Weather height.** Wind is at 100 m, while most migrants fly higher
+  (Part 3 shows how much higher). A next step is pressure-level winds (e.g.
+  925 hPa, about 750 m), weighted by where Part 3 finds birds actually fly.
 - **One heading for the season.** Tailwind is measured along the
   season-average heading from the radar. Individual nights (and species) vary
   around it.
@@ -698,6 +1320,23 @@ mass-migration nights the model can't anticipate from 9 pm weather alone?
   proxy for movement. Birds passing straight through California without
   lingering barely change its share, so they're under-counted by it; and
   arrivals and departures in the same week partly cancel out.
+- **Mountaintop radars.** For KSOX and KVTX, height above the radar is not
+  height above the cities below. KNKX is the best guide to low flight over a
+  city.
+- **Low layers are under-counted** (ground clutter and beam geometry), so
+  the true share of low-flying birds is probably higher than Part 3 shows.
+- **Radar sees all flying targets.** vol2bird removes rain, but some insects
+  remain, especially on warm nights and at low heights.
+- **A lights-out window chosen from one year.** Peak timing shifts by days
+  to a week between years, so Part 4's window should be checked against
+  other years (BirdCast's archive or the Dark Ecology dataset).
+- **Radar counts birds aloft, not collisions.** We assume more birds
+  overhead means more risk, which Van Doren et al. (2021) support, but we
+  don't measure collisions.
+- **Alert "forecasts" use observed weather** (an upper bound on real skill).
+- **Light exposure uses simulated routes** at weekly, ~100 km steps and an
+  annual light map. It shows *where* exposure is likely high, not exact
+  numbers of birds over a given building.
 
 ## Citations for this notebook
 
@@ -709,3 +1348,17 @@ mass-migration nights the model can't anticipate from 9 pm weather alone?
   forecasting bird migration. *Science* 361, 1115–1118.
 - Wright, M. N., & Ziegler, A. (2017). ranger: A fast implementation of random
   forests. *Journal of Statistical Software* 77(1).
+- Van Doren, B. M., et al. (2021). Drivers of fatal bird collisions in an
+  urban center. *PNAS* 118(24), e2101666118.
+  https://doi.org/10.1073/pnas.2101666118 (copy the full author list from the
+  DOI page for the report's reference list)
+- Horton, K. G., Nilsson, C., Van Doren, B. M., La Sorte, F. A., Dokter, A.
+  M., & Farnsworth, A. (2019). Bright lights in the big cities: migratory
+  birds' exposure to artificial light. *Frontiers in Ecology and the
+  Environment* 17(4), 209–214. https://doi.org/10.1002/fee.2029
+- San Diego Bird Alliance. Lights Out San Diego.
+  https://www.sandiegobirdalliance.org/what-we-do/lights-out-san-diego-english.html
+- Román, M. O., et al. (2018). NASA's Black Marble nighttime lights product
+  suite. *Remote Sensing of Environment* 210, 113–143.
+  https://doi.org/10.1016/j.rse.2018.03.017. Data: VNP46A4,
+  accessed with the `blackmarbler` R package (World Bank).
