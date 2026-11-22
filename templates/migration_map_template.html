@@ -93,6 +93,15 @@
   }
   .toggle { display: flex; gap: 8px; align-items: center; font-size: 0.875rem; cursor: pointer; }
 
+  /* Lights Out panel */
+  .lo-status { font-weight: 600; font-size: 0.9375rem; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; min-height: 22px; }
+  .badge {
+    font-size: 0.75rem; border: 1px solid var(--rule); border-radius: 999px;
+    padding: 1px 8px; color: var(--ink);
+  }
+  .badge.risk { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
   footer { margin-top: 20px; color: var(--ink-2); font-size: 0.75rem; line-height: 1.5; max-width: 110ch; }
   footer p { margin: 0 0 6px; }
 
@@ -143,7 +152,14 @@
         <h2>Radar, birds per km per night</h2>
         <svg class="spark" id="spark" viewBox="0 0 260 64" preserveAspectRatio="none" aria-hidden="true"></svg>
         <ul class="stations" id="stations"></ul>
-        <p class="muted" style="margin:6px 0 0">Line: mean of the three radars across the season. Marker: tonight.</p>
+        <p class="muted" style="margin:6px 0 0">Line: mean of the three radars across the season. Marker: tonight. Shaded: Lights Out peak weeks. Dots: the season's busiest nights.</p>
+      </div>
+
+      <div id="lo-section">
+        <h2>Lights Out San Diego</h2>
+        <div class="lo-status" id="lo-status">–</div>
+        <div class="badges" id="lo-badges" aria-live="polite"></div>
+        <p class="muted" id="lo-note" style="margin:6px 0 0"></p>
       </div>
 
       <div>
@@ -178,6 +194,7 @@
   const D = JSON.parse(document.getElementById('map-data').textContent);
   const SP = D.species;          // [{code, name, color:[r,g,b], n_routes, pct_study}]
   const TRIPS = D.trips;         // [{s: species index, x: 0/1 through study states, p: [[lon,lat],...], t: [day of year,...]}]
+  const LO = D.lights || null;   // {season:[doy,doy], peak:[doy,doy], busy:[doy...], overcast:[doy...], n_busiest, before_11_pct}
   const RADAR = D.radar;         // {stations:[{code,label,lon,lat,offset}], doy0, pass:[[per-night values], ...one array per station]}
   const START = D.time.start, END = D.time.end;   // day-of-year range of the animation
   const DAYS_PER_SECOND = 3;     // animation speed at 1×
@@ -389,11 +406,49 @@
     if (v === null) return;
     path += (path ? 'L' : 'M') + xOf(RADAR.doy0 + j).toFixed(1) + ' ' + yOf(v).toFixed(1);
   });
-  spark.innerHTML =
+  // Lights Out peak weeks as a shaded band; busiest nights as dots on the line.
+  let loBand = '', loDots = '';
+  if (LO) {
+    const x0 = xOf(LO.peak[0] - 0.5), x1 = xOf(LO.peak[1] + 0.5);
+    loBand = `<rect x="${x0.toFixed(1)}" y="0" width="${(x1 - x0).toFixed(1)}" height="${H}" style="fill: var(--rule)"/>`;
+    loDots = LO.busy.map(doy => {
+      const v = regional[doy - RADAR.doy0];
+      return v == null ? '' :
+        `<circle cx="${xOf(doy).toFixed(1)}" cy="${yOf(v).toFixed(1)}" r="2.2" style="fill: var(--ink)"/>`;
+    }).join('');
+  }
+  spark.innerHTML = loBand +
     `<line x1="0" x2="${W}" y1="${H - PAD}" y2="${H - PAD}" style="stroke: var(--rule)" vector-effect="non-scaling-stroke"/>` +
     `<path d="${path}" fill="none" style="stroke: var(--ink-2)" stroke-width="1.25" vector-effect="non-scaling-stroke"/>` +
+    loDots +
     `<line id="cursor" y1="0" y2="${H}" style="stroke: var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
   const cursor = document.getElementById('cursor');
+
+  // ---- Panel: Lights Out status ----------------------------------------------
+  const loStatus = document.getElementById('lo-status');
+  const loBadges = document.getElementById('lo-badges');
+  if (LO) {
+    document.getElementById('lo-note').textContent =
+      'Lights off 11 pm – 6 am.' +
+      (LO.before_11_pct != null ? ` At San Diego, about ${LO.before_11_pct}% of the night's migrants fly before 11 pm.` : '');
+  } else {
+    document.getElementById('lo-section').hidden = true;
+  }
+  function renderLightsOut() {
+    if (!LO) return;
+    const night = Math.floor(now);
+    const inPeak = night >= LO.peak[0] && night <= LO.peak[1];
+    const inSeason = night >= LO.season[0] && night <= LO.season[1];
+    loStatus.textContent = inPeak ? 'Critical peak (Apr 15 – May 15)'
+                         : inSeason ? 'Spring program (Mar 1 – Jun 15)'
+                         : 'Outside the program';
+    const busy = LO.busy.includes(night), overcast = LO.overcast.includes(night);
+    const badges = [];
+    if (busy) badges.push(`<span class="badge">One of the season's ${LO.n_busiest} busiest nights</span>`);
+    if (overcast) badges.push('<span class="badge">Overcast: birds fly lower</span>');
+    if (busy && overcast) badges.push('<span class="badge risk">High-risk night</span>');
+    loBadges.innerHTML = badges.join('');
+  }
 
   const stList = document.getElementById('stations');
   RADAR.stations.forEach(st => {
@@ -433,6 +488,7 @@
       const v = radarValue(k, now);
       el.textContent = v === null ? '–' : fmtNum.format(v);
     });
+    renderLightsOut();
   }
 
   let last = performance.now();

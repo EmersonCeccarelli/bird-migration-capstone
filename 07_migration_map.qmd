@@ -21,6 +21,10 @@ spring season:
 - **A control panel:** play/pause, a date slider, a radar chart with a
   "tonight" marker, species on/off switches, and a filter for routes that
   pass through our study states.
+- **A Lights Out panel** (from notebook 06's results): whether tonight falls
+  in the Lights Out San Diego program, whether it was one of the season's
+  busiest nights, and whether it was overcast (when birds fly lower). The
+  radar chart shades the program's peak weeks and marks the busiest nights.
 
 The page is plain HTML and JavaScript, so it works on GitHub Pages: copy the
 file into the website repository and link to it (see the end of this
@@ -197,6 +201,50 @@ stations_json <- coords |>
 stations_json
 ```
 
+## Step 4b · Lights Out context (from notebook 06)
+
+Notebook 06 found that the busiest nights carry much of the season and that
+birds fly lower on overcast nights. Here we tag each night so the map can
+show it. Everything comes from files notebook 06 already saved; if 06 hasn't
+been run, the panel simply shows the program dates.
+
+```{r lights-out}
+PROGRAM_SEASON <- as.Date(c("2026-03-01", "2026-06-15"))   # Lights Out San Diego, spring
+PROGRAM_PEAK   <- as.Date(c("2026-04-15", "2026-05-15"))   # its "critical peak"
+N_BUSIEST      <- 10      # "busiest nights" = top 10 by the three radars' mean
+OVERCAST_PCT   <- 80      # cloud cover above this counts as overcast (as in 06)
+
+# Busiest nights: mean of the three radars, top N.
+busy_doy <- radar |>
+  group_by(doy) |>
+  summarise(mean_pass = mean(total_passage), .groups = "drop") |>
+  slice_max(mean_pass, n = N_BUSIEST) |>
+  pull(doy)
+
+# Overcast nights at San Diego (KNKX), from 06's nightly weather.
+weather_file <- file.path(PATHS$derived, "weather",
+                          paste0("nightly_features_", SEASON_LABEL, ".csv"))
+overcast_doy <- if (file.exists(weather_file)) {
+  read_csv(weather_file, show_col_types = FALSE) |>
+    filter(station == "KNKX", cloud > OVERCAST_PCT) |>
+    pull(night) |> yday()
+} else integer(0)
+
+# Share of San Diego's birds that fly before 11 pm (06, "lights_out_hours").
+hours_file <- file.path(PATHS$derived, "lights_out_hours.csv")
+before_11 <- if (file.exists(hours_file)) {
+  h <- read_csv(hours_file, show_col_types = FALSE) |> filter(station == "KNKX", start == 23)
+  if (nrow(h) == 1) round(100 * (1 - h$covered)) else NA
+} else NA
+
+lights_json <- list(
+  season = yday(PROGRAM_SEASON), peak = yday(PROGRAM_PEAK),
+  busy = sort(busy_doy), overcast = sort(overcast_doy),
+  n_busiest = N_BUSIEST, before_11_pct = before_11
+)
+str(lights_json)
+```
+
 ## Step 5 · Background map
 
 Land outlines for North and Central America, plus our study states outlined
@@ -252,6 +300,7 @@ credits <- c(
   html_escape(paste("eBird data:", EBIRD_CITATION)),
   html_escape(EBIRD_DISCLAIMER),
   html_escape("Radar: NOAA National Weather Service Radar Operations Center (1991). NEXRAD Level II Base Data. NOAA NCEI. doi:10.7289/V5W9574V. Processed with vol2bird / bioRad (Dokter et al. 2011)."),
+  html_escape("Lights Out San Diego: San Diego Bird Alliance (program dates for spring 2026). Busiest nights, cloud cover and the share of birds flying before 11 pm come from our radar and weather analysis (notebook 06; weather: Open-Meteo / ERA5, CC BY 4.0)."),
   html_escape("Map library: deck.gl (MIT licence). Outlines: R maps package.")
 )
 
@@ -262,6 +311,7 @@ map_data <- list(
   trips   = trips |> select(s, x, p, t),
   radar   = list(stations = stations_json |> select(code, label, lon, lat, offset),
                  doy0 = min(doy_range), pass = pass),
+  lights  = lights_json,
   time    = list(start = time_start, end = time_end, year = year(SEASON_START)),
   # Initial view: the Pacific Flyway from Mexico to British Columbia.
   view    = list(longitude = -116, latitude = 36, zoom = 3.4, pitch = 0, bearing = 0),
@@ -304,7 +354,10 @@ Check:
 - hovering a moving dot shows its species; hovering a radar circle shows that
   night's count;
 - the species switches and the "only routes through the study states" filter
-  work.
+  work;
+- the radar chart's shaded band covers April 15 – May 15, and moving the
+  slider onto one of its dotted nights shows "One of the season's 10
+  busiest nights" in the Lights Out panel.
 
 **Publish on the website (GitHub Pages):**
 
