@@ -75,9 +75,13 @@ try_block("ebird", {
 
 # --- 3. BirdFlow models and simulated routes -----------------------------------
 try_block("birdflow", {
-  b <- dir_size(BirdFlowR::birdflow_options("cache"), "\\.hdf5$")
-  add("raw", "BirdFlow models", "model files (cache, outside repo)", b$files)
-  add("raw", "BirdFlow models", "size", b$mb, "MB")
+  # Models are cached as one .Rds per species (e.g. "westan_best_dg.Rds"),
+  # beside an index.Rds and readme files, which we leave out of the count.
+  cache  <- BirdFlowR::birdflow_options("cache")
+  models <- list.files(cache, pattern = "\\.(Rds|rds|hdf5)$", recursive = TRUE, full.names = TRUE)
+  models <- models[!grepl("^index\\.", basename(models))]
+  add("raw", "BirdFlow models", "model files (cache, outside repo)", length(models))
+  add("raw", "BirdFlow models", "size", round(sum(file.size(models)) / 1e6, 1), "MB")
 })
 try_block("routes", {
   r <- dir_size(PATHS$routes, "\\.geojson$")

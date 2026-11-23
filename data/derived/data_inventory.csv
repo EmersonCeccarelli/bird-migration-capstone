@@ -16,8 +16,8 @@ derived,Nightly radar totals,rows,321,
 raw,eBird Status & Trends,"files (ebirdst cache, outside repo)",610,
 raw,eBird Status & Trends,size,252,MB
 raw,eBird Status & Trends,resolution,27km,
-raw,BirdFlow models,"model files (cache, outside repo)",0,
-raw,BirdFlow models,size,0,MB
+raw,BirdFlow models,"model files (cache, outside repo)",7,
+raw,BirdFlow models,size,132,MB
 derived,Simulated routes,species,6,
 derived,Simulated routes,simulated birds per species,200,
 derived,Simulated routes,weekly positions,15800,
@@ -31,11 +31,11 @@ raw,NASA Black Marble VNP46A4,size,7,MB
 raw,NASA Black Marble VNP46A4,grid cells,4238 x 3754,
 project,raw/ folder,files,16,
 project,raw/ folder,size,105,MB
-project,derived/ folder,files,678,
+project,derived/ folder,files,679,
 project,derived/ folder,size,43.7,MB
 project,figures/ folder,files,17,
 project,figures/ folder,size,3.9,MB
-project,GitHub repository,files tracked,760,
+project,GitHub repository,files tracked,762,
 software,R,version,4.5.1,
 software,Quarto,version,1.10.18,
 software,inventory,date run,2026-11-22,
