@@ -30,9 +30,10 @@ library(here)
 #   * We first planned fall, but ranking all 60 BirdFlow 2026 models by
 #     Pacific Flyway use (notebook 01, Step 1) showed spring share was higher
 #     for 12 of the 16 species with >10% of their population in our states.
-#   * Matches Horton et al. (2019, Biology Letters): more Pacific Flyway flight
-#     activity in spring than fall; and La Sorte et al. (2014): western
-#     migrants take different ("looped") routes in spring vs fall.
+#   * Background: Newcombe et al. (2019, Biology Letters) studied migratory
+#     flight on the Pacific Flyway with weather radar in both seasons; and
+#     La Sorte et al. (2014): western migrants take different ("looped")
+#     routes in spring vs fall.
 #
 # The three names below must agree. To switch seasons, change all three:
 #   spring: "spring" / "prebreeding_migration"  / "spring"
@@ -54,9 +55,11 @@ CANDIDATE_SPECIES <- c(
   "westan",  # Western Tanager        49% / 47%  western icon; night migrant
   "lazbun",  # Lazuli Bunting         69% / 67%  top share in both seasons
   "casvir",  # Cassin's Vireo         54% / 33%  Pacific Coast breeder
-  "gocspa",  # Golden-crowned Sparrow 22% / 39%  migrating sparrow with fall strength
+  "macwar",  # MacGillivray's Warbler 39% / 38%  western night-migrating warbler
   "virwar",  # Virginia's Warbler     41% / 27%  interior Southwest
-  "rufhum"   # Rufous Hummingbird     23% / 25%
+  "rufhum"   # Rufous Hummingbird     23% / 25%  DAY migrant: should NOT appear
+             #                                   in night radar (a useful check);
+             #                                   textbook looped migrant
 )
 # Backups if one fails notebook 01: "calhum" (Calliope Hummingbird, 78% spring),
 # "gocspa" (Golden-crowned Sparrow, winters in coastal California).
