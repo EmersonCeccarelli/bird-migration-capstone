@@ -146,6 +146,7 @@
           </select>
         </div>
         <input id="slider" type="range" aria-label="Day of the season" style="margin-top:10px">
+        <p class="muted" style="margin:4px 0 0">Drag the slider to pick a night; playback pauses there. Press Play or the spacebar to resume.</p>
       </div>
 
       <div>
@@ -461,7 +462,15 @@
   // ---- Controls ----------------------------------------------------------------
   const slider = document.getElementById('slider');
   slider.min = START; slider.max = END; slider.step = 0.25; slider.value = now;
-  slider.addEventListener('input', () => { now = Number(slider.value); render(); });
+  // Choosing a date pauses playback, so the map stays on the night the viewer
+  // picked. Pointer (mouse/touch) and keyboard (arrow keys) both count; Play
+  // or the spacebar resumes from that date.
+  slider.addEventListener('pointerdown', () => setPlaying(false));
+  slider.addEventListener('input', () => {
+    setPlaying(false);
+    now = Number(slider.value);
+    render();
+  });
 
   const playBtn = document.getElementById('play');
   function setPlaying(p) {
